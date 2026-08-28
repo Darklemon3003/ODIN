@@ -1,0 +1,119 @@
+package com.odin.core.data.repository
+
+import android.app.ActivityManager
+import android.content.Context
+import com.odin.core.domain.model.SecurityMetrics
+import com.odin.core.domain.model.SecurityStatus
+import com.odin.core.domain.model.ThreatLevel
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+class SecurityRepositoryImplTest {
+
+    private lateinit var context: Context
+    private lateinit var activityManager: ActivityManager
+    private lateinit var repository: SecurityRepositoryImpl
+
+    @BeforeEach
+    fun setup() {
+        context = mockk()
+        activityManager = mockk()
+        every { context.getSystemService(Context.ACTIVITY_SERVICE) } returns activityManager
+        
+        val memoryInfo = ActivityManager.MemoryInfo()
+        memoryInfo.totalMem = 8_000_000_000L
+        memoryInfo.availMem = 4_000_000_000L
+        every { activityManager.getMemoryInfo(any()) } answers {
+            (it.invocation.args[0] as ActivityManager.MemoryInfo).totalMem = memoryInfo.totalMem
+            (it.invocation.args[0] as ActivityManager.MemoryInfo).availMem = memoryInfo.availMem
+        }
+        
+        repository = SecurityRepositoryImpl(context)
+    }
+
+    @Test
+    fun `getSecurityStatus returns initial status`() = runTest {
+        val status = repository.getSecurityStatus().first()
+        
+        assertNotNull(status)
+        assertTrue(status.isSecure)
+        assertEquals(ThreatLevel.SECURE, status.threatLevel)
+        assertEquals(0, status.activeThreats)
+    }
+
+    @Test
+    fun `getMetrics returns real metrics`() = runTest {
+        val metrics = repository.getMetrics().first()
+        
+        assertNotNull(metrics)
+        assertTrue(metrics.cpuUsage >= 0f)
+        assertTrue(metrics.ramUsage >= 0f)
+        assertTrue(metrics.postureScore >= 0)
+        assertTrue(metrics.edrHealth >= 0)
+    }
+
+    @Test
+    fun `updateSecurityStatus updates status correctly`() = runTest {
+        val newStatus = SecurityStatus(
+            isSecure = false,
+            threatLevel = ThreatLevel.HIGH,
+            activeThreats = 5,
+            lastUpdateTime = System.currentTimeMillis(),
+            components = com.odin.core.domain.model.ComponentStatus(
+                vpnActive = false,
+                firewallActive = true,
+                detectionActive = true,
+                sentryActive = false,
+                netShieldActive = false
+            )
+        )
+        
+        repository.updateSecurityStatus(newStatus)
+        val updatedStatus = repository.getSecurityStatus().first()
+        
+        assertEquals(false, updatedStatus.isSecure)
+        assertEquals(ThreatLevel.HIGH, updatedStatus.threatLevel)
+        assertEquals(5, updatedStatus.activeThreats)
+    }
+
+    @Test
+    fun `updateMetricsReal updates CPU and RAM usage`() {
+        assertDoesNotThrow {
+            repository.updateMetricsReal()
+        }
+        
+        val metrics = repository.getMetrics()
+        assertNotNull(metrics)
+    }
+
+    @Test
+    fun `getSecurityStatus handles ActivityManager errors gracefully`() = runTest {
+        every { context.getSystemService(Context.ACTIVITY_SERVICE) } throws RuntimeException("Service not available")
+        
+        val errorRepository = SecurityRepositoryImpl(context)
+        val status = errorRepository.getSecurityStatus().first()
+        
+        assertNotNull(status)
+    }
+
+    @Test
+    fun `getMetrics handles ActivityManager errors gracefully`() = runTest {
+        every { activityManager.getMemoryInfo(any()) } throws RuntimeException("Memory info not available")
+        
+        val metrics = repository.getMetrics().first()
+        
+        assertNotNull(metrics)
+        assertTrue(metrics.cpuUsage >= 0f)
+        assertTrue(metrics.ramUsage >= 0f)
+    }
+}

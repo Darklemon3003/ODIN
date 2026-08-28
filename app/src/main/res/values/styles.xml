@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.ODIN" />
+
+    <style name="Widget" />
+
+    <style name="Widget.Odin" />
+
+    <style name="Widget.Odin.Text" />
+
+    <style name="Widget.Odin.Button" parent="Widget.AppCompat.Button" />
+
+    <style name="Widget.Odin.Text.Title">
+        <item name="android:textColor">@color/odin_text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/odin_text_title</item>
+    </style>
+
+    <style name="Widget.Odin.Text.Body">
+        <item name="android:textColor">@color/odin_text_secondary</item>
+        <item name="android:textSize">@dimen/odin_text_body</item>
+    </style>
+
+    <style name="Widget.Odin.CardText">
+        <item name="android:background">@drawable/bg_odin_card</item>
+        <item name="android:textColor">@color/odin_text_primary</item>
+        <item name="android:padding">@dimen/odin_space_md</item>
+    </style>
+
+    <style name="Widget.Odin.Button.Primary" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_odin_button_primary</item>
+        <item name="android:minHeight">@dimen/odin_button_height</item>
+        <item name="android:paddingStart">@dimen/odin_space_md</item>
+        <item name="android:paddingEnd">@dimen/odin_space_md</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/odin_background</item>
+    </style>
+
+    <style name="Widget.Odin.Button.Secondary" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_odin_button_secondary</item>
+        <item name="android:minHeight">@dimen/odin_button_height</item>
+        <item name="android:paddingStart">@dimen/odin_space_md</item>
+        <item name="android:paddingEnd">@dimen/odin_space_md</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/odin_text_primary</item>
+    </style>
+
+    <style name="Widget.Odin.Button.Danger" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_odin_button_danger</item>
+        <item name="android:minHeight">@dimen/odin_button_height</item>
+        <item name="android:paddingStart">@dimen/odin_space_md</item>
+        <item name="android:paddingEnd">@dimen/odin_space_md</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/odin_text_primary</item>
+    </style>
+</resources>

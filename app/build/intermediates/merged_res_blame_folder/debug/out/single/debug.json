@@ -1,0 +1,182 @@
+[
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxhdpi_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxhdpi\\ic_odin_logo.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_button_danger.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_button_danger.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_chip_warning.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_chip_warning.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_state_unavailable.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_state_unavailable.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_module_container.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_module_container.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_separator.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_separator.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_alert_card.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_alert_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-mdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-mdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_card.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\drawable_ic_odin_notification.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\drawable\\ic_odin_notification.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/layout_activity_file_analysis.xml.flat",
+        "source": "com.odin.core.app-main-84:/layout/activity_file_analysis.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\drawable_ic_odin_monochrome.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\drawable\\ic_odin_monochrome.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxxhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxxhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_button_primary.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_button_primary.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_section.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_section.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_button_secondary.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_button_secondary.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_screen.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_screen.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\layout_activity_network_anonymity.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\layout\\activity_network_anonymity.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_chip_safe.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_chip_safe.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xhdpi_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xhdpi\\ic_odin_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\layout_activity_file_analysis.xml.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\layout\\activity_file_analysis.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-mdpi_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-mdpi\\ic_odin_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_state_planned.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_state_planned.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_chip_error.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_chip_error.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-hdpi_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-hdpi\\ic_odin_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxxhdpi_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxxhdpi\\ic_odin_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_chip_neutral.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_chip_neutral.xml"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\drawable_ic_odin_logo.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\drawable\\ic_odin_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-merged_res-82:\\mipmap-hdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\User\\.gradle\\daemon\\8.2\\com.odin.core.app-main-84:\\mipmap-hdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/drawable_bg_odin_state_attention.xml.flat",
+        "source": "com.odin.core.app-main-84:/drawable/bg_odin_state_attention.xml"
+    },
+    {
+        "merged": "com.odin.core.app-merged_res-82:/layout_activity_network_anonymity.xml.flat",
+        "source": "com.odin.core.app-main-84:/layout/activity_network_anonymity.xml"
+    }
+]

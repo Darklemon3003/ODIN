@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ODIN</string>
+    <string name="service_started">Sentry iniciado</string>
+    <string name="service_stopped">Sentry detenido</string>
+    <string name="service_pending">Sentry pendiente de inicio</string>
+    <string name="notification_channel_name">ODIN Proteccion persistente</string>
+    <string name="notification_channel_description">Canal de notificacion para servicios visibles de ODIN.</string>
+    <string name="start_netshield">Activar NetShield</string>
+    <string name="stop_netshield">Detener NetShield</string>
+    <string name="netshield_status_active">NetShield activo</string>
+    <string name="netshield_status_inactive">NetShield inactivo</string>
+
+    <string name="status_inactive_short">Inactivo</string>
+    <string name="status_not_validated">No validado</string>
+    <string name="status_attention_required">Requiere atencion</string>
+    <string name="status_partial_protection">Proteccion parcial</string>
+    <string name="status_protected">Protegido</string>
+    <string name="status_planned">Planeado</string>
+    <string name="status_unavailable">No disponible</string>
+    <string name="status_requires_consent">Requiere consentimiento</string>
+    <string name="status_requires_permission">Requiere permiso</string>
+    <string name="status_available_after_setup">Disponible despues de configuracion</string>
+
+    <string name="file_analysis_title">Analisis de archivos</string>
+    <string name="select_file">Seleccionar archivo</string>
+    <string name="scan_file">Escanear archivo</string>
+    <string name="static_analysis">Analisis estatico</string>
+    <string name="dynamic_analysis">Analisis dinamico</string>
+    <string name="heuristic_analysis">Analisis heuristico</string>
+    <string name="quarantine_file">Cuarentena de archivo</string>
+    <string name="export_report">Exportar reporte</string>
+    <string name="hash_information">Informacion de hash</string>
+    <string name="metadata">Metadatos</string>
+    <string name="threat_information">Informacion de amenaza</string>
+    <string name="analysis">Analisis</string>
+    <string name="md5">MD5</string>
+    <string name="sha256">SHA-256</string>
+    <string name="file_type">Tipo de archivo</string>
+    <string name="file_size">Tamano de archivo</string>
+    <string name="threat_level">Nivel de amenaza</string>
+    <string name="malicious">Malicioso</string>
+    <string name="status_idle">Estado: inactivo</string>
+    <string name="not_available_abbrev">N/D</string>
+    <string name="md5_not_available">MD5: N/D</string>
+    <string name="sha256_not_available">SHA-256: N/D</string>
+    <string name="file_type_not_available">Tipo de archivo: N/D</string>
+    <string name="file_size_not_available">Tamano de archivo: N/D</string>
+    <string name="threat_level_not_available">Nivel de amenaza: N/D</string>
+    <string name="malicious_not_available">Malicioso: N/D</string>
+    <string name="file_picker_title">Seleccionar archivo</string>
+    <string name="file_selected_toast">Archivo seleccionado: %1$s</string>
+</resources>

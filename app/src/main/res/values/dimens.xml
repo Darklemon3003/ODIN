@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="odin_space_xs">4dp</dimen>
+    <dimen name="odin_space_sm">8dp</dimen>
+    <dimen name="odin_space_md">16dp</dimen>
+    <dimen name="odin_space_lg">24dp</dimen>
+    <dimen name="odin_radius_sm">6dp</dimen>
+    <dimen name="odin_radius_md">8dp</dimen>
+    <dimen name="odin_radius_lg">12dp</dimen>
+    <dimen name="odin_stroke_thin">1dp</dimen>
+    <dimen name="odin_button_height">48dp</dimen>
+    <dimen name="odin_text_title">22sp</dimen>
+    <dimen name="odin_text_section">16sp</dimen>
+    <dimen name="odin_text_body">14sp</dimen>
+    <dimen name="odin_text_small">12sp</dimen>
+</resources>

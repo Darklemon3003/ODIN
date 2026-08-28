@@ -1,0 +1,52 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+.DS_Store
+
+# Build outputs
+*.apk
+*.ap_
+*.aab
+
+# Logs
+*.log
+
+# Screenshots and test images
+*.png
+*.jpg
+*.jpeg
+!app/src/main/res/drawable-*/**
+
+# Temporary files
+*.err
+*.out
+*.tmp
+*.temp
+
+# Window XML test files
+window*.xml
+fase*.xml
+
+# Test backup
+test_backup/
+
+# Gradle wrapper (keep the jar but exclude properties if sensitive)
+# gradle/wrapper/gradle-wrapper.properties
+
+# Keystore files
+*.jks
+*.keystore
+
+# External libraries
+/captures
+.externalNativeBuild
+.cxx/
+
+# Benchmark
+benchmark/build/

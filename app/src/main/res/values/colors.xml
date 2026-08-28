@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="odin_background">#050A0F</color>
+    <color name="odin_background_elevated">#08111A</color>
+    <color name="odin_surface">#0D1620</color>
+    <color name="odin_surface_variant">#121E2A</color>
+    <color name="odin_surface_soft">#172635</color>
+    <color name="odin_primary">#36E272</color>
+    <color name="odin_primary_dark">#159947</color>
+    <color name="odin_primary_soft">#163822</color>
+    <color name="odin_success">#36E272</color>
+    <color name="odin_warning">#F6A43A</color>
+    <color name="odin_error">#EF4444</color>
+    <color name="odin_info">#39A7FF</color>
+    <color name="odin_text_primary">#F2F7F4</color>
+    <color name="odin_text_secondary">#AAB7B0</color>
+    <color name="odin_text_muted">#748079</color>
+    <color name="odin_border">#274338</color>
+    <color name="odin_disabled">#53615A</color>
+    <color name="odin_overlay">#1A36E272</color>
+    <color name="colorPrimary">@color/odin_primary</color>
+    <color name="colorPrimaryDark">@color/odin_background</color>
+    <color name="colorAccent">@color/odin_primary</color>
+    <color name="ic_launcher_background">#000000</color>
+</resources>

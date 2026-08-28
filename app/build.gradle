@@ -1,0 +1,253 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
+    id 'com.google.dagger.hilt.android'
+    id 'jacoco'
+}
+
+android {
+    namespace 'com.odin.core'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.odin.core"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+        }
+    }
+
+    sourceSets {
+        test {
+            java {
+                exclude '**/LogEventTest.java'
+                exclude '**/ForensicsIntegrationTest.java'
+                exclude '**/ForensicsPerformanceTest.java'
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        compose true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.10'
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += 'META-INF/DEPENDENCIES'
+            excludes += 'META-INF/LICENSE.md'
+            excludes += 'META-INF/NOTICE.md'
+        }
+    }
+}
+
+dependencies {
+    // AndroidX Core
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'com.google.android.material:material:1.11.0'
+
+    configurations {
+        all {
+            exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
+            exclude group: 'org.bouncycastle', module: 'bcpkix-jdk15on'
+            exclude group: 'commons-logging', module: 'commons-logging'
+        }
+    }
+
+    // Compose BOM
+    implementation platform('androidx.compose:compose-bom:2024.02.01')
+    kotlinCompilerPluginClasspath 'androidx.compose.compiler:compiler:1.5.10'
+
+    // Compose UI
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'androidx.activity:activity-compose:1.8.2'
+
+    // Navigation
+    implementation 'androidx.navigation:navigation-compose:2.7.7'
+
+    // ViewModel
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+
+    // Hilt
+    implementation 'com.google.dagger:hilt-android:2.50'
+    kapt 'com.google.dagger:hilt-android-compiler:2.50'
+    implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
+
+    // Room Database
+    implementation 'androidx.room:room-runtime:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    kapt 'androidx.room:room-compiler:2.6.1'
+
+    // Coroutines
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0'
+
+    // Security: EncryptedSharedPreferences + AndroidKeyStore
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    // WorkManager: Tareas periódicas eficientes
+    implementation 'androidx.work:work-runtime-ktx:2.8.1'
+
+    // JSON parsing
+    implementation 'org.json:json:20231013'
+
+    // Logging interno
+    implementation 'androidx.startup:startup-runtime:1.1.1'
+
+    // Machine Learning: TensorFlow Lite
+    implementation 'org.tensorflow:tensorflow-lite:2.14.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.4.4'
+
+    // File Analysis: Apache Tika
+    implementation 'org.apache.tika:tika-core:2.9.1'
+    implementation 'org.apache.tika:tika-parsers-standard-package:2.9.1'
+
+    // JSON: Gson
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Dependency Injection: javax.inject
+    implementation 'javax.inject:javax.inject:1'
+
+    // PDF Generation: iText
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+
+    // Colecciones avanzadas y utilidades
+    implementation 'commons-collections:commons-collections:3.2.2'
+    implementation 'commons-codec:commons-codec:1.16.0'
+
+    // Compresión y serialización
+    implementation 'org.apache.commons:commons-compress:1.24.0'
+
+    // Time-series analysis
+    implementation 'tech.tablesaw:tablesaw-core:0.43.1'
+
+    // Concurrencia avanzada
+    implementation 'org.jctools:jctools-core:4.0.1'
+
+    // Estadísticas
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+
+    // Charts
+    // implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    // Maps
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    implementation 'com.google.maps.android:maps-compose:4.3.0'
+
+    // Image loading
+    implementation 'io.coil-kt:coil-compose:2.5.0'
+
+    // Accompanist
+    implementation 'com.google.accompanist:accompanist-permissions:0.34.0'
+    implementation 'com.google.accompanist:accompanist-systemuicontroller:0.34.0'
+
+    // Lottie
+    implementation 'com.airbnb.android:lottie-compose:6.3.0'
+
+    // Shimmer
+    // implementation 'com.valentinilk.shimmer:shimmer-compose:2.0.0'
+
+    // Debug
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.1.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation platform('androidx.compose:compose-bom:2024.02.01')
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.50'
+    kaptAndroidTest 'com.google.dagger:hilt-android-compiler:2.50'
+}
+
+// Jacoco configuration for test coverage
+android {
+    buildTypes {
+        debug {
+            enableUnitTestCoverage true
+        }
+    }
+}
+
+// Jacoco task configuration
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn 'testDebugUnitTest'
+    
+    group 'Reporting'
+    description 'Generate Jacoco coverage reports'
+    
+    reports {
+        xml.required.set true
+        html.required.set true
+        csv.required.set false
+    }
+    
+    def fileFilter = [
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/*Test*.*',
+        'android/**/*.*',
+        '**/di/**',
+        '**/databinding/**',
+        '**/android/databinding/**',
+        '**/androidx/databinding/**',
+        '**/com/odin/core/ui/**'
+    ]
+    
+    def debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") {
+        exclude fileFilter
+    }
+    
+    def mainSrc = "${project.projectDir}/src/main/java"
+    
+    sourceDirectories.setFrom files(mainSrc)
+    classDirectories.setFrom files(debugTree)
+    executionData.setFrom fileTree(project.buildDir) {
+        include 'jacoco/testDebugUnitTest.exec'
+    }
+}

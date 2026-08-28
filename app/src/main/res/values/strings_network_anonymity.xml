@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="network_anonymity_title">Red y anonimato</string>
+
+    <string name="status_inactive">Estado: inactivo</string>
+    <string name="status_active">Estado: activo</string>
+    <string name="status_fully_protected">Estado: proteccion completa</string>
+    <string name="status_partially_protected">Estado: proteccion parcial</string>
+
+    <string name="activate_anonymity">Activar red privada</string>
+    <string name="deactivate_anonymity">Desactivar red privada</string>
+
+    <string name="status_cards_title">Estado de modulos</string>
+
+    <string name="tor_status_disconnected">Tor: desconectado</string>
+    <string name="tor_status_connected">Tor: conectado</string>
+    <string name="tor_status_connecting">Tor: conectando...</string>
+
+    <string name="vpn_status_disconnected">VPN: desconectada</string>
+    <string name="vpn_status_connected">VPN: conectada</string>
+    <string name="vpn_status_connecting">VPN: conectando...</string>
+
+    <string name="routing_status_inactive">Ruteo: inactivo</string>
+    <string name="routing_status_active">Ruteo: activo</string>
+    <string name="routing_status_tor">Ruteo: Tor</string>
+    <string name="routing_status_vpn">Ruteo: VPN</string>
+    <string name="routing_status_direct">Ruteo: directo</string>
+
+    <string name="dns_status_standard">DNS: estandar</string>
+    <string name="dns_status_encrypted">DNS: cifrado</string>
+    <string name="dns_status_doh">DNS: DoH</string>
+    <string name="dns_status_dot">DNS: DoT</string>
+
+    <string name="ip_leak_status_protected">Fuga IP: no validada</string>
+    <string name="ip_leak_status_leaks_detected">Fuga IP: detectada</string>
+    <string name="ip_leak_status_checking">Fuga IP: revisando...</string>
+
+    <string name="logs_title">Eventos de red</string>
+    <string name="no_logs_available">Sin eventos recientes</string>
+    <string name="clear_logs">Limpiar eventos</string>
+
+    <string name="configuration">Configuracion</string>
+    <string name="tor_configuration">Configuracion Tor</string>
+    <string name="vpn_configuration">Configuracion VPN</string>
+    <string name="dns_configuration">Configuracion DNS</string>
+
+    <string name="enable_bridges">Habilitar bridges</string>
+    <string name="disable_bridges">Deshabilitar bridges</string>
+    <string name="transport_type">Tipo de transporte</string>
+    <string name="obfs4">obfs4</string>
+    <string name="meek">meek</string>
+    <string name="snowflake">snowflake</string>
+
+    <string name="enable_split_tunneling">Habilitar tunel dividido</string>
+    <string name="disable_split_tunneling">Deshabilitar tunel dividido</string>
+    <string name="enable_kill_switch">Habilitar kill switch</string>
+    <string name="disable_kill_switch">Deshabilitar kill switch</string>
+    <string name="server_address">Direccion del servidor</string>
+
+    <string name="enable_doh">Habilitar DoH</string>
+    <string name="disable_doh">Deshabilitar DoH</string>
+    <string name="enable_dot">Habilitar DoT</string>
+    <string name="disable_dot">Deshabilitar DoT</string>
+    <string name="enable_dnssec">Habilitar DNSSEC</string>
+    <string name="disable_dnssec">Deshabilitar DNSSEC</string>
+    <string name="doh_provider">Proveedor DoH</string>
+    <string name="dot_provider">Proveedor DoT</string>
+
+    <string name="provider_cloudflare">Cloudflare</string>
+    <string name="provider_google">Google</string>
+    <string name="provider_quad9">Quad9</string>
+    <string name="provider_opendns">OpenDNS</string>
+
+    <string name="tor_service_channel">Servicio Tor</string>
+    <string name="tor_service_description">Servicio Tor visible de ODIN</string>
+    <string name="vpn_service_channel">Servicio VPN</string>
+    <string name="vpn_service_description">Servicio VPN visible de ODIN</string>
+    <string name="tor_notification_title">ODIN Tor</string>
+    <string name="tor_notification_text">Tor activo</string>
+    <string name="vpn_notification_title">ODIN VPN</string>
+    <string name="vpn_notification_text">VPN activa</string>
+    <string name="network_anonymity_activated_toast">Red privada activada</string>
+    <string name="network_anonymity_deactivated_toast">Red privada desactivada</string>
+    <string name="network_status_connected">conectado</string>
+    <string name="network_status_connected_feminine">conectada</string>
+    <string name="network_status_disconnected">desconectado</string>
+    <string name="network_status_disconnected_feminine">desconectada</string>
+    <string name="network_status_active">activo</string>
+    <string name="network_status_inactive">inactivo</string>
+    <string name="network_status_encrypted">cifrado</string>
+    <string name="network_status_standard">estandar</string>
+    <string name="network_status_not_validated">no validada</string>
+    <string name="network_status_leaks_detected">fuga detectada</string>
+    <string name="tor_status_format">Tor: %1$s</string>
+    <string name="vpn_status_format">VPN: %1$s</string>
+    <string name="routing_status_format">Ruteo: %1$s</string>
+    <string name="dns_status_format">DNS: %1$s</string>
+    <string name="ip_leak_status_format">Fuga IP: %1$s</string>
+    <string name="overall_status_format">Estado: %1$s</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ODIN" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/odin_background</item>
+        <item name="android:colorAccent">@color/odin_primary</item>
+        <item name="colorAccent">@color/odin_primary</item>
+        <item name="colorPrimary">@color/odin_primary</item>
+        <item name="colorPrimaryDark">@color/odin_background</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:navigationBarColor">@color/odin_background</item>
+        <item name="android:statusBarColor">@color/odin_background</item>
+        <item name="android:textColorPrimary">@color/odin_text_primary</item>
+        <item name="android:textColorSecondary">@color/odin_text_secondary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
