@@ -21,7 +21,8 @@ local.properties
 *.png
 *.jpg
 *.jpeg
-!app/src/main/res/drawable-*/**
+!app/src/main/res/drawable/ic_odin_logo.png
+!app/src/main/res/mipmap-*/**
 
 # Temporary files
 *.err
@@ -30,8 +31,11 @@ local.properties
 *.temp
 
 # Window XML test files
-window*.xml
-fase*.xml
+window.xml
+window2.xml
+fase4_settings_wait.xml
+fase7_window_*.xml
+fase9_*.xml
 
 # Test backup
 test_backup/
