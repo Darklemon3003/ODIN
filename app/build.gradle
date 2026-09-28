@@ -142,8 +142,7 @@ dependencies {
     // WorkManager: Tareas periódicas eficientes
     implementation 'androidx.work:work-runtime-ktx:2.8.1'
 
-    // JSON parsing
-    implementation 'org.json:json:20231013'
+    // JSON parsing uses the Android framework org.json implementation.
 
     // Logging interno
     implementation 'androidx.startup:startup-runtime:1.1.1'

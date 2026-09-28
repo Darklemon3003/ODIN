@@ -2202,3 +2202,447 @@ release/minified artifact installs but hits a fatal `VerifyError` during startup
 executed because device `116829e90703` was not connected.
 
 Stop condition honored: Phase 13 was not started.
+
+---
+
+# Phase 12.2 — R8 Root Cause Repair and Final Physical Closure
+
+Audit date: 2026-09-28
+
+This section supersedes the Phase 12.1 release/R8 diagnosis. The release startup
+blocker is fixed and the complete API 36 release-test matrix described below passed.
+Phase 12 is still **not closed** because the mandatory Android 12 physical device was
+not connected, so none of its required upgrade, clean-install, or functional gates
+could be executed.
+
+## Source-control snapshot and GitHub backup
+
+The pre-change repository state was inspected before modifying the dependency or R8
+configuration. Generated/private material was excluded, including Gradle caches,
+build directories, APKs, local SDK configuration, signing files, device evidence,
+IDE caches, and secrets.
+
+```
+Original branch: phase11-file-analysis
+Original HEAD: 0d396299bc79b5ebd030f2a33986215de283c1ed
+Safety branch: phase12-r8-fix
+LOCAL SNAPSHOT COMMIT: 01a1235 (chore: snapshot phase 12 hardening state)
+REMOTE BRANCH: origin/phase12-r8-fix
+PUSH RESULT: SUCCESS
+WORKTREE AFTER SNAPSHOT: only the subsequently applied app/build.gradle fix was modified
+```
+
+The safety commit contains the legitimate inherited Phase 10/11/12 source, Gradle,
+manifest, resources, tests, schema, and official report state. It does not contain
+APKs, keystores, signing material, `local.properties`, Gradle caches, or temporary
+device files. `.gitignore` was tightened for the observed local build/evidence output.
+
+## Original release failure reproduced
+
+A clean pre-fix release build was assembled, signed only with the Android debug
+certificate as a disposable test artifact, installed on the API 36 emulator, and
+launched. Installation succeeded; startup failed before the main screen completed.
+
+Exact verifier failure:
+
+```
+java.lang.VerifyError: Verifier rejected class com.odin.core.obfuscated.au:
+void com.odin.core.obfuscated.au.g(java.io.StringWriter, int, int) failed to verify:
+void com.odin.core.obfuscated.au.g(java.io.StringWriter, int, int):
+[0x71] 'this' argument 'Uninitialized Reference: org.json.JSONException'
+not instance of 'Reference: java.lang.RuntimeException'
+```
+
+The rejected class was in `base.apk!classes2.dex`. The startup path was:
+
+```
+SentryCore.appendEvent
+SentryCore.<init>
+SentryCore.getInstance
+IntegrationModule_ProvideLogExporterFactory.provideLogExporter
+```
+
+## org.json origin and production use
+
+Gradle `releaseRuntimeClasspath` and `dependencyInsight` proved that the packaged
+implementation came from a direct app dependency, not a transitive dependency,
+source copy, embedded JAR, or shaded dependency:
+
+```
+SOURCE: direct Gradle dependency
+DEPENDENCY: org.json:json:20231013
+CLASSIFICATION: DIRECT
+WHY PRESENT: historical JSON parsing dependency in app/build.gradle
+```
+
+Repository searches found no `org/json/*.java`, `JSONArray.java`, `JSONObject.java`,
+or `JSONTokener.java` source copy and no embedded JSON JAR. Production callers are:
+
+- `SentryCore`
+- `LogEvent`
+- `LogExporter`
+- `ForensicAnalyzer`
+- `LegacyPreferenceMigration`
+- `LogsViewModel`
+- `CanonicalQuarantineManager`
+
+These callers use the Android-compatible `JSONObject`, `JSONArray`, `JSONException`,
+and related `put`, `get`, `opt`, constructor, and `toString` APIs. `SentryCore` uses
+them for the existing encrypted event/index/status/rule serialization and
+deserialization paths. No caller requires a Maven-only API, and no event format or
+storage schema change was needed.
+
+## Platform collision, R8 mapping, and DEX proof
+
+Android already supplies `org.json`. The Maven implementation and Android framework
+implementation are not class-hierarchy identical:
+
+```
+Maven org.json:json:20231013: JSONException extends RuntimeException
+Android API 36 framework:       JSONException extends Exception
+```
+
+The pre-fix release therefore packaged a second implementation under names that also
+exist on the Android boot class path. The active R8 configuration included:
+
+```
+-allowaccessmodification
+-repackageclasses 'com.odin.core.obfuscated'
+```
+
+It did not contain global `-dontshrink`, `-dontoptimize`, or `-dontobfuscate`. The
+complete pre-fix `org.json` mapping search showed the implementation split across
+repackaged and platform names:
+
+| Original | Pre-fix result | Release DEX result |
+|---|---|---|
+| `org.json.JSONArray` | `com.odin.core.obfuscated.au` | packaged/repackaged |
+| `org.json.JSONObject` | `com.odin.core.obfuscated.bu` | packaged/repackaged |
+| `org.json.JSONTokener` | `com.odin.core.obfuscated.eu` | packaged/repackaged |
+| `org.json.JSONException` | name retained | resolved to platform class at runtime |
+| `org.json.JSONPointerException` | name retained | retained only where reachable |
+| JSON property annotations | repackaged where reachable | packaged/repackaged |
+
+DEX disassembly of the rejected `JSONArray` method showed the invalid final sequence:
+
+```
+new-instance p2, Lorg/json/JSONException;
+invoke-direct {p2,p3,p1}, Ljava/lang/RuntimeException;-><init>(...)
+```
+
+R8 optimized against the Maven class hierarchy, where `JSONException` directly
+extends `RuntimeException`. At runtime, boot-class-path precedence resolved
+`org.json.JSONException` to Android's class, whose direct parent is `Exception`.
+The verifier therefore rejected the constructor invocation. This is the proved root
+cause; it is not a generic keep-rule or reflection failure.
+
+## Chosen remediation
+
+The direct dependency was removed from `app/build.gradle`, leaving all production
+code on Android's framework `org.json` implementation.
+
+Why this is the correct narrow repair:
+
+- Android already provides every JSON API used by ODIN.
+- It removes the duplicate platform namespace and hierarchy collision entirely.
+- It preserves SentryCore's JSON fields, encrypted payload format, event format,
+  migrations, and JSON/CSV export contracts.
+- It leaves shrinking, optimization, obfuscation, and resource shrinking enabled.
+- It does not broaden any keep rule or conceal verifier failures.
+
+Rejected alternatives:
+
+- Global `-dontshrink`, `-dontoptimize`, or `-dontobfuscate`: unnecessary and would
+  roll back Phase 12 hardening.
+- Broad `-keep class ** { *; }`: unrelated to the actual platform collision.
+- Keeping all `org.json.**`: would retain an unnecessary duplicate implementation
+  and continue exposing boot-class-path ambiguity.
+- Rewriting SentryCore or changing JSON format: unnecessary and would create a data
+  compatibility risk.
+- Catching/suppressing the startup error: a `VerifyError` is a release artifact defect,
+  not a recoverable application state.
+
+Files intentionally changed during Phase 12.2:
+
+- `.gitignore`: ignores observed local caches and generated runtime evidence; included
+  in the safety snapshot.
+- `app/build.gradle`: removes direct `org.json:json:20231013`.
+- `FASE_12_HARDENING_ANDROID_GOOGLE_PLAY.md`: appends this audit record.
+
+R8 rule changes: **none**. Dependency change: one direct dependency removed.
+
+Post-fix `dependencyInsight` result:
+
+```
+No dependencies matching given input were found in :app:releaseRuntimeClasspath
+```
+
+Post-fix `mapping.txt` has zero `org.json.*` definitions, and release DEX inspection
+found no packaged `org.json` implementation. The previous short names `au`, `bu`,
+and `eu` are now reused for unrelated reachable library classes; they are not JSON
+classes.
+
+## Clean build and static gates
+
+All required commands ran after the fix with R8 and release resource shrinking active:
+
+| Gate | Result |
+|---|---|
+| `clean` | PASS |
+| `:app:compileDebugKotlin` | PASS |
+| `:app:assembleDebug` | PASS |
+| `:app:testDebugUnitTest` | PASS: 55 tests, 0 failures, 0 errors, 0 skipped |
+| `:app:assembleRelease` | PASS; `minifyReleaseWithR8` and shrinking executed |
+| `:app:lintDebug` | PASS: 0 errors, 378 warnings |
+| `:app:lintRelease` | PASS: 0 errors, 378 warnings |
+
+Release hardening remains enabled:
+
+```
+minifyEnabled true
+shrinkResources true
+proguard-android-optimize.txt
+optimization enabled
+```
+
+Artifacts:
+
+```
+Unsigned release APK:
+  app/build/outputs/apk/release/app-release-unsigned.apk
+  Size: 10,144,057 bytes
+  SHA-256: 91FC44B0448A74F72230284AA99E24607B57ABCDEF59AFF7373D916F33697F37
+
+Disposable release-test APK:
+  app/build/outputs/apk/release/app-release-phase12-2-test-signed.apk
+  Size: 10,227,868 bytes
+  SHA-256: 72B90B51F22DD1AAEBC652D7C1205D50A26A916115A75DD8829F8E16E7A7A5C2
+  Signature: v2=true, v3=true; Android Debug certificate; non-production only
+```
+
+## API 36 release runtime matrix
+
+Environment:
+
+```
+Serial: emulator-5554
+API: 36
+AVD: odin_api36
+Artifact: disposable signed copy of the fixed minified release APK
+```
+
+Fresh install succeeded. Cold launch completed in `MainActivity` with `Status: ok`
+and `TotalTime: 5638 ms`. The prior verifier crash is gone. Release UID Logcat had
+zero matches for `VerifyError`, `ClassNotFoundException`, `NoSuchMethodError`,
+`NoSuchMethodException`, `IllegalAccessError`, `IncompatibleClassChangeError`,
+`AbstractMethodError`, `NoClassDefFoundError`, `SecurityException`, and
+`FATAL EXCEPTION` attributable to ODIN.
+
+SystemUI produced emulator-only ANR/noise during the run and was restarted by Android.
+It was not in the ODIN process and did not produce an ODIN crash.
+
+### SentryCore and Logs
+
+- Explicit Sentry consent was required and granted.
+- Android's POST_NOTIFICATIONS prompt was shown and explicitly allowed.
+- Explicit start created `SentryService` as FGS id `8901`, type `0x40000000`, channel
+  `odin_sentry_channel`, with an ongoing/private notification.
+- The screen showed active service state, a fresh heartbeat, and `Salud OK`.
+- Explicit stop removed the service and notification.
+- Logs reloaded nine persisted/deserialized events without JSON corruption or loss.
+- A later app-process restart still showed Sentry consent as granted, confirming
+  consent persistence.
+- A controlled notification-denial path was also exercised: the permission prompt was
+  denied, the UI remained at `Notificacion requerida`, and no service started.
+
+After File Analysis and NetShield, Logs showed 16 visible real events, including:
+
+- Sentry controlled stop.
+- `FILE_ANALYSIS_STARTED` and `FILE_ANALYSIS_COMPLETED`.
+- NetShield consent, VPN authorization, risk acknowledgement, explicit start, and
+  explicit stop.
+
+### JSON and CSV SAF exports
+
+Both exports created real files through Android's document provider. PDF remained
+honestly unavailable.
+
+```
+JSON: /sdcard/Download/odin_logs_20260928_132529.json
+Size: 3,374 bytes
+SHA-256: b916466998dc3cb73005c55c960210f8551033dbb97b7881c907e175c1179036
+Parsed: valid object, sanitized=true, eventCount=9, events array count=9
+
+CSV: /sdcard/Download/odin_logs_20260928_132724.csv
+Size: 1,590 bytes
+SHA-256: a27a54ef40404ae1303f035d7dd76d71f08a621cd05916a25ed5642ad312e862
+Parsed: one header plus nine event rows
+Header: timestamp,module,severity,title,summary,details,source
+```
+
+Both files had zero matches for the controlled private filename, `content://`, raw
+`/storage/` or `/sdcard/` paths, and the searched credential terms.
+
+### File Analysis
+
+The controlled benign file was selected through SAF and analyzed explicitly:
+
+```
+Name: PRIVATE_TEST_FILENAME_ODIN.txt
+Size: 38 B
+MIME: text/plain
+UI SHA-256: 89eb495053c9374baf293fcec632eb27ae3e1a1562f38fc59b1c00f85fd162f7
+Independent SHA-256: 89eb495053c9374baf293fcec632eb27ae3e1a1562f38fc59b1c00f85fd162f7
+Verdict: Sin indicadores conocidos detectados
+Detected type: UNKNOWN
+```
+
+The UI retained the explicit disclaimer that local checks do not guarantee a file is
+malware-free. Both start and completion events were present in Logs. No broad storage
+permission was requested.
+
+### NetShield
+
+The release flow required, in order, explicit app consent, Android's official VPN
+authorization dialog, explicit connectivity-risk acknowledgement, and explicit start.
+
+Live OS evidence:
+
+```
+Process: com.odin.core:netshield
+Service: com.odin.core/.service.NetShieldVpnService
+foregroundId: 8902
+foregroundServiceType: 0x40000000 (specialUse)
+Channel: odin_netshield_channel
+Notification: ONGOING_EVENT | NO_CLEAR | FOREGROUND_SERVICE, visibility PRIVATE
+tun0: UP, 10.0.0.1/32
+```
+
+No FGS exception occurred. Explicit stop removed the service record, `tun0`, and the
+active notification. ODIN correctly continues to describe this as validation mode,
+without claiming full traffic forwarding or forced DNS.
+
+Residual UI issue found: while the OS service, FGS notification, and tunnel were live,
+the NetShield runtime heartbeat panel still displayed `Detenido` and `Sin datos`.
+The start/stop controls and OS lifecycle were correct, but the status panel did not
+reflect the separate-process heartbeat. This does not invalidate the required FGS/tun
+start-stop test, but it remains an operator-facing state-consistency defect.
+
+### Release Logcat privacy
+
+The release flow exercised Sentry, NetShield, File Analysis, JSON/CSV export, and a
+controlled permission-denial state before the final UID-scoped Logcat inspection.
+
+ODIN UID (`10221`) results:
+
+```
+PRIVATE_TEST_FILENAME_ODIN: 0
+content://: 0
+/storage/: 0
+/sdcard/: 0
+Authorization: 0
+Bearer: 0
+token: 0
+payload: 0
+password: 0
+secret: 0
+raw URL: 0
+raw IPv4: 0
+all searched verifier/linkage/fatal/FGS exceptions: 0
+```
+
+System-level Logcat contained four MediaProvider lines with the selected
+`/storage/emulated/0/Download/PRIVATE_TEST_FILENAME_ODIN.txt` path. Their PID/tag was
+MediaProvider and UID `10105`, not ODIN UID `10221`; this is classified as Android
+document-provider behavior, not ODIN release logging.
+
+## Mandatory Android 12 physical matrix
+
+The required device was checked again after all API 36 work:
+
+```
+Required serial: 116829e90703
+Expected model: Xiaomi 21121119SG
+Expected OS: Android 12
+adb devices -l: emulator-5554 only
+adb -s 116829e90703 get-state: device not found
+```
+
+Therefore the following mandatory gates are **NOT TESTED / PENDING** and no result is
+fabricated:
+
+| Android 12 gate | Result |
+|---|---|
+| In-place `adb install -r` update and encrypted-state preservation | NOT TESTED |
+| Existing consents, Logs, database, and Sentry event readability | NOT TESTED |
+| Clean uninstall/install and startup defaults | NOT TESTED |
+| Sentry consent/start/notification/stop | NOT TESTED |
+| NetShield consent/VPN/risk/start/tun/stop | NOT TESTED |
+| File Analysis SAF/SHA/verdict | NOT TESTED |
+| Logs search/filter/detail and real events | NOT TESTED |
+| JSON and CSV export | NOT TESTED |
+| Crypto/database/migration integrity | NOT TESTED |
+| Final services/tun/notification state | NOT TESTED |
+
+## Final API 36 state
+
+```
+ODIN activity services: none
+tun0: absent
+active ODIN FGS notifications: none
+READ_EXTERNAL_STORAGE: ignore
+WRITE_EXTERNAL_STORAGE: ignore
+READ_MEDIA_AUDIO/VIDEO/IMAGES/VISUAL_USER_SELECTED: ignore
+```
+
+## Final risk classification
+
+```
+CRITICAL ACTIVE: 0
+HIGH ACTIVE: 1
+MEDIUM ACTIVE: 2
+LOW ACTIVE: 2
+```
+
+Critical resolved:
+
+- The release/R8 `VerifyError` is fixed by removing the duplicate platform JSON
+  implementation. The fixed minified release launches and completes the API 36 matrix.
+
+High active:
+
+- The owner-mandated Android 12 physical matrix is unexecuted because serial
+  `116829e90703` is absent. This is a release-closure validation risk, not a proven
+  Android 12 defect.
+
+Medium active:
+
+- NetShield's API 36 status panel reports a stale stopped/no-heartbeat state while the
+  independently verified VPN service and tunnel are live.
+- Android MediaProvider logs the SAF-selected path at system level. ODIN's own release
+  UID did not leak it, but platform logging remains visible to privileged collectors.
+
+Low active:
+
+- Legacy/non-production status labels remain in parts of the UI and tests.
+- Generated local validation evidence remains intentionally uncommitted and ignored.
+
+## Phase 12.2 final status
+
+```
+PHASE 12 FINAL STATUS: NOT CLOSED
+GO ABSOLUTE: NO
+SAFE TO START PHASE 13: NO
+```
+
+Exact reason:
+
+The critical release/R8 blocker is repaired, all required clean build/lint/unit gates
+pass, and the fixed release artifact passes the API 36 Sentry, Logs, export, File
+Analysis, NetShield, privacy, and final-state checks. However, Phase 12 explicitly
+requires the complete physical Android 12 matrix, and device `116829e90703` was not
+connected. That mandatory gate remains untested. The NetShield runtime heartbeat UI
+mismatch is also documented for owner review.
+
+Stop condition honored: Phase 13 and Phase 14 were not started. Owner review is
+required before any later phase.
