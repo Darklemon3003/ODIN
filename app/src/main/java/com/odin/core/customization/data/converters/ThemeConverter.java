@@ -2,11 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.Theme;
 
 /**
- * REAL ThemeConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * ThemeConverter para Room.
+ * No convierte silenciosamente datos corruptos en null valido.
  */
 public class ThemeConverter {
 
@@ -19,8 +20,12 @@ public class ThemeConverter {
         }
         try {
             return gson.fromJson(value, Theme.class);
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de Theme: JSON invalido", e);
         } catch (Exception e) {
-            return null;
+            throw new ConverterCorruptionException(
+                    "Error al deserializar Theme", e);
         }
     }
 

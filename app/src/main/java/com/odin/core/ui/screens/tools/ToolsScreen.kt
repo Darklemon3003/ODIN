@@ -51,7 +51,8 @@ fun ToolsScreen(
     onOpenLogs: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
-    onOpenFirewall: () -> Unit = {}
+    onOpenFirewall: () -> Unit = {},
+    onOpenFileAnalysis: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -89,10 +90,12 @@ fun ToolsScreen(
                     )
                     ToolCard(
                         title = "Escaner de archivos",
-                        description = "Activity legacy existente; no se abre desde Fase 6 hasta auditar permisos y UX.",
-                        status = "Legacy parcial",
-                        tone = OdinStatusTone.Planned,
-                        icon = Icons.Default.Scanner
+                        description = "Analisis local de archivos seleccionados via SAF. No es un antivirus completo.",
+                        status = "Disponible",
+                        tone = OdinStatusTone.Safe,
+                        icon = Icons.Default.Scanner,
+                        actionLabel = "Abrir analisis",
+                        onAction = onOpenFileAnalysis
                     )
                     ToolCard(
                         title = "Firewall avanzado",
@@ -176,8 +179,8 @@ fun ToolsScreen(
                     )
                     ToolCard(
                         title = "Privacidad DNS y fugas IP",
-                        description = "Componentes legacy detectados; no se muestran como proteccion activa.",
-                        status = "Planeado",
+                        description = "Componentes legacy eliminados en Fase 12. No forman parte de ODIN.",
+                        status = "Eliminado",
                         tone = OdinStatusTone.Planned,
                         icon = Icons.Default.Security
                     )

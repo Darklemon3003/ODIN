@@ -69,7 +69,7 @@ fun FirewallScreen(
                         rule = rule,
                         onToggle = { },
                         onClick = { },
-                        onDelete = { viewModel.deleteRule(rule.id) }
+                        onDelete = { }
                     )
                 }
             }
@@ -147,7 +147,7 @@ fun FirewallRuleItem(
                     onCheckedChange = { onToggle() },
                     enabled = false
                 )
-                IconButton(onClick = onDelete) {
+                IconButton(onClick = onDelete, enabled = false) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete")
                 }
             }

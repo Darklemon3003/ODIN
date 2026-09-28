@@ -131,7 +131,7 @@ fun NetShieldControlScreen(
             item {
                 OdinEmptyState(
                     title = "Limites de privacidad",
-                    message = "NetShield no descifra TLS, no inspecciona contenido privado, no garantiza anonimato y no envia trafico a servidores externos desde este flujo.",
+                    message = "NetShield utiliza la interfaz VPN local de Android para el modo de red de ODIN. Esta version no garantiza reenvio completo del trafico como un servicio VPN comercial. No descifra TLS, no inspecciona contenido privado, no garantiza anonimato y no envia trafico a servidores externos.",
                     icon = Icons.Default.Info
                 )
             }

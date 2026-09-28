@@ -44,21 +44,36 @@ public class BackupManager {
         backup.setStatus(BackupStatus.IN_PROGRESS);
         database.backupDao().update(backup);
 
+        String backupPath = null;
+        File backupFile = null;
+
         try {
-            String backupPath = generateBackupPath(backup);
-            File backupFile = new File(backupPath);
+            backupPath = generateBackupPath(backup);
+            backupFile = new File(backupPath);
             backupFile.getParentFile().mkdirs();
 
-            FileOutputStream fos = new FileOutputStream(backupFile);
             byte[] backupData = collectBackupData(backup.getBackupType());
-            
+
             if (backup.isEncrypted()) {
                 backupData = encryptor.encrypt(backupData);
             }
 
             byte[] compressedData = compressor.compress(backupData);
-            fos.write(compressedData);
-            fos.close();
+
+            // Escribir a archivo temporal primero para no sobrescribir backup valido
+            File tempFile = new File(backupPath + ".tmp");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(compressedData);
+            }
+
+            // Renombrar al destino final solo despues de escritura exitosa
+            if (backupFile.exists()) {
+                backupFile.delete();
+            }
+            if (!tempFile.renameTo(backupFile)) {
+                tempFile.delete();
+                throw new java.io.IOException("No se pudo finalizar la escritura del backup");
+            }
 
             backup.setBackupPath(backupPath);
             backup.setBackupSize(compressedData.length);
@@ -68,6 +83,14 @@ public class BackupManager {
 
             return backup;
         } catch (Exception e) {
+            // Limpiar archivo temporal o parcial en caso de fallo
+            if (backupFile != null && backupFile.exists() && backupFile.getAbsolutePath().endsWith(".tmp")) {
+                backupFile.delete();
+            }
+            File tempFile = backupPath != null ? new File(backupPath + ".tmp") : null;
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
             backup.setStatus(BackupStatus.FAILED);
             database.backupDao().update(backup);
             return backup;

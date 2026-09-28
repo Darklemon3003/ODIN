@@ -40,10 +40,19 @@ public class RestoreManager {
                 return backup;
             }
 
-            FileInputStream fis = new FileInputStream(backupFile);
-            byte[] compressedData = new byte[(int) backupFile.length()];
-            fis.read(compressedData);
-            fis.close();
+            byte[] compressedData;
+            try (FileInputStream fis = new FileInputStream(backupFile)) {
+                compressedData = new byte[(int) backupFile.length()];
+                int totalRead = 0;
+                while (totalRead < compressedData.length) {
+                    int read = fis.read(compressedData, totalRead, compressedData.length - totalRead);
+                    if (read == -1) break;
+                    totalRead += read;
+                }
+                if (totalRead != compressedData.length) {
+                    throw new java.io.IOException("Backup incompleto: bytes leidos " + totalRead + " de " + compressedData.length);
+                }
+            }
 
             byte[] decompressedData = compressor.decompress(compressedData);
 
@@ -51,7 +60,7 @@ public class RestoreManager {
                 decompressedData = encryptor.decrypt(decompressedData);
             }
 
-            String backupData = new String(decompressedData);
+            String backupData = new String(decompressedData, java.nio.charset.StandardCharsets.UTF_8);
             restoreFromData(backupData);
 
             backup.setStatus(BackupStatus.COMPLETED);

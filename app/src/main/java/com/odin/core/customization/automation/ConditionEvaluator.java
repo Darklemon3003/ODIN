@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
-import android.os.Environment;
+import android.os.StatFs;
 import com.odin.core.customization.model.Condition;
 import com.odin.core.customization.model.ConditionOperator;
 import com.odin.core.customization.model.ConditionType;
@@ -144,9 +144,13 @@ public class ConditionEvaluator {
             return false;
         }
 
-        File externalStorage = Environment.getExternalStorageDirectory();
-        long freeSpace = externalStorage.getFreeSpace();
-        long totalSpace = externalStorage.getTotalSpace();
+        File appStorage = context.getFilesDir();
+        StatFs stat = new StatFs(appStorage.getAbsolutePath());
+        long freeSpace = stat.getAvailableBytes();
+        long totalSpace = stat.getTotalBytes();
+        if (totalSpace == 0) {
+            return false;
+        }
         float freeSpacePercent = (float) freeSpace / totalSpace;
         float targetLevel = Float.parseFloat(condition.getConditionValue());
 

@@ -56,10 +56,13 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
     private static final String KEY_CRASH_COUNT = "key_crash_count";
     private static final String KEY_LAST_SYNC = "key_last_sync_timestamp";
     private static final String KEY_CORRUPTED_DATA_MARKER = "key_corrupted_marker";
+    private static final String KEY_QUARANTINED_LOG_EVENTS = "key_quarantined_log_events";
+    private static final String KEY_CRASH_TRACE_INDEX = "key_crash_trace_index";
 
     // Límites de seguridad
     private static final int MAX_LOG_ENTRIES = 5000;
     private static final int MAX_CRASH_COUNT_BEFORE_CLEANUP = 10;
+    private static final int MAX_CRASH_TRACES = 10; // Limite de crash traces retenidos
     private static final long HEARTBEAT_INTERVAL_MS = 60_000; // 1 minuto
     private static final long DATA_SYNC_INTERVAL_MS = 300_000; // 5 minutos
 
@@ -71,6 +74,7 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
     private final AtomicLong lastHeartbeat = new AtomicLong(System.currentTimeMillis());
     private final AtomicBoolean isHealthy = new AtomicBoolean(true);
     private final AtomicLong crashCount = new AtomicLong(0);
+    private final AtomicBoolean hasCorruption = new AtomicBoolean(false);
 
     /**
      * Constructor privado. Usar getInstance() en su lugar.
@@ -210,6 +214,11 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
     /**
      * Carga todos los eventos disponibles (descifrados).
      *
+     * Si los datos estan corruptos, NO los elimina. En su lugar:
+     * - Marca el sistema con corrupcion (hasCorruption = true)
+     * - Cuarentena el blob corrupto bajo KEY_QUARANTINED_LOG_EVENTS
+     * - Retorna lista vacia (sin implicar que no hubo eventos)
+     *
      * @return Lista completa de LogEvent
      * @throws PersistenceException si la carga falla
      */
@@ -226,8 +235,8 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
             return deserializeEvents(plainJson);
 
         } catch (Exception e) {
-            Log.w(TAG, "Error descargando eventos, intentando recuperación...");
-            attemptAutoHealing(e);
+            Log.w(TAG, "Error descargando eventos. Datos corruptos preservados, no eliminados.");
+            quarantineCorruptData(e);
             return new ArrayList<>();
         }
     }
@@ -326,10 +335,12 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
             String crashLog = exception.getFormattedMessage() + "\n[ENCRYPTED_STACKTRACE:" +
                     encryptedStackTrace + "]";
 
-            // Almacenar en storage seguro
-            storage.saveString(
-                    "crash_" + System.currentTimeMillis(),
-                    cryptoManager.encrypt(crashLog));
+            // Almacenar en storage seguro con clave de timestamp
+            String crashKey = "crash_" + System.currentTimeMillis();
+            storage.saveString(crashKey, cryptoManager.encrypt(crashLog));
+
+            // Pruning: mantener solo los ultimos MAX_CRASH_TRACES crash traces
+            pruneCrashTraces(crashKey);
 
             // Registrar contador
             storage.saveLong(KEY_CRASH_COUNT, crashCount.get());
@@ -346,41 +357,107 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
     }
 
     /**
-     * Intenta auto-sanarse ante fallos de datos.
-     * Limpia datos corruptos y registra el evento.
+     * Pruning de crash traces para evitar crecimiento ilimitado.
+     * Mantiene un registro de claves de crash traces en KEY_CRASH_TRACE_INDEX
+     * y elimina los mas antiguos cuando se excede MAX_CRASH_TRACES.
      *
-     * @param originalError Excepción original
+     * @param newCrashKey Clave del crash trace recien agregado
      */
-    private void attemptAutoHealing(@NonNull Exception originalError) {
+    private void pruneCrashTraces(@NonNull String newCrashKey) {
         try {
-            Log.w(TAG, "Iniciando auto-sanación...");
+            // Cargar indice de crash traces
+            String indexJson = storage.loadString(KEY_CRASH_TRACE_INDEX, "[]");
+            JSONArray indexArray = new JSONArray(indexJson);
 
-            // Marcar datos como corruptos
-            storage.saveString(KEY_CORRUPTED_DATA_MARKER,
-                    cryptoManager.encrypt("Data corruption detected at " + new Date()));
+            // Agregar nueva clave
+            indexArray.put(newCrashKey);
 
-            // Limpiar eventos corruptos
-            storage.remove(KEY_LOG_EVENTS);
+            // Pruning: eliminar crash traces antiguos si se excede el limite
+            while (indexArray.length() > MAX_CRASH_TRACES) {
+                String oldKey = indexArray.getString(0);
+                storage.remove(oldKey);
+                // Remover del indice
+                JSONArray newArray = new JSONArray();
+                for (int i = 1; i < indexArray.length(); i++) {
+                    newArray.put(indexArray.getString(i));
+                }
+                indexArray = newArray;
+            }
 
-            // Registrar evento de sanación
-            LogEvent healingEvent = new LogEvent(
-                    new Date().getTime(),
-                    "AUTO_HEALING",
-                    "Se detectó corrupción de datos. Limpieza realizada. Causa original: " +
-                            originalError.getMessage());
-
-            appendEvent(healingEvent);
-            isHealthy.set(true);
+            // Guardar indice actualizado
+            storage.saveString(KEY_CRASH_TRACE_INDEX, indexArray.toString());
 
         } catch (Exception e) {
-            Log.e(TAG, "Auto-sanación falló: " + e.getMessage());
+            Log.w(TAG, "Error en pruning de crash traces: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Cuarentena datos corruptos sin eliminarlos.
+     *
+     * Preserva el blob corrupto bajo KEY_QUARANTINED_LOG_EVENTS para posible
+     * recuperacion futura. NO elimina KEY_LOG_EVENTS inmediatamente.
+     *
+     * Marca el sistema con hasCorruption = true para que la UI pueda
+     * distinguir "no hay eventos" de "corrupcion detectada".
+     *
+     * @param originalError Excepcion original que causo la corrupcion
+     */
+    private void quarantineCorruptData(@NonNull Exception originalError) {
+        try {
+            Log.w(TAG, "Cuarentena de datos corruptos. Datos preservados, no eliminados.");
+
+            // Marcar corrupcion
+            hasCorruption.set(true);
+
+            // Preservar blob corrupto bajo clave de cuarentena
+            String corruptBlob = storage.loadString(KEY_LOG_EVENTS, "");
+            if (!corruptBlob.isEmpty()) {
+                storage.saveString(KEY_QUARANTINED_LOG_EVENTS, corruptBlob);
+            }
+
+            // Marcar con timestamp de corrupcion (no elimina datos originales)
+            storage.saveString(KEY_CORRUPTED_DATA_MARKER,
+                    cryptoManager.encrypt("Data corruption detected at " + new Date() +
+                            ". Original data quarantined. Cause: " +
+                            originalError.getMessage()));
+
+            // No eliminar KEY_LOG_EVENTS aqui. El dato corrupto se preserva.
+            // Solo se eliminara mediante reset explicito del usuario.
+
+        } catch (Exception e) {
+            Log.e(TAG, "Cuarentena de datos falló: " + e.getMessage());
             isHealthy.set(false);
         }
     }
 
     /**
+     * Indica si se ha detectado corrupcion en los datos persistidos.
+     *
+     * @return true si hay corrupcion detectada, false en caso contrario
+     */
+    public boolean hasCorruption() {
+        return hasCorruption.get();
+    }
+
+    /**
+     * Elimina explicitamente los datos corruptos en cuarentena.
+     * Solo debe llamarse por accion explicita del usuario (reset).
+     */
+    public synchronized void clearCorruptData() {
+        try {
+            storage.remove(KEY_QUARANTINED_LOG_EVENTS);
+            storage.remove(KEY_CORRUPTED_DATA_MARKER);
+            storage.remove(KEY_LOG_EVENTS);
+            hasCorruption.set(false);
+        } catch (PersistenceException e) {
+            Log.e(TAG, "Error limpiando datos corruptos: " + e.getMessage());
+        }
+    }
+
+    /**
      * Verifica integridad de datos al iniciar.
-     * Detecta corrupción y limpia automáticamente.
+     * Detecta corrupcion y la cuarentena sin eliminar datos.
      */
     private void verifyDataIntegrity() {
         try {
@@ -390,8 +467,8 @@ public final class SentryCore implements GlobalExceptionHandler.ExceptionCallbac
                 cryptoManager.decrypt(encryptedJson);
             }
         } catch (Exception e) {
-            Log.w(TAG, "Corrupción detectada durante verificación: " + e.getMessage());
-            attemptAutoHealing(e);
+            Log.w(TAG, "Corrupcion detectada durante verificacion: " + e.getMessage());
+            quarantineCorruptData(e);
         }
     }
 

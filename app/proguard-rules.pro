@@ -7,8 +7,6 @@
 # 1. CONFIGURACIÓN GENERAL
 # ============================================
 -verbose
--dontshrink
--dontoptimize
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
@@ -146,11 +144,13 @@
 # 10. OPTIMIZACIONES FINALES
 # ============================================
 
-# Remover logs
+# Remover logs — all ODIN production Log calls stripped in release
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
     public static *** i(...);
+    public static *** w(...);
+    public static *** e(...);
 }
 
 # Remover métodos assert
@@ -273,112 +273,23 @@
 -keep class com.odin.core.data.repository.** { *; }
 
 # ============================================
-# 20. COIL IMAGE LOADING (Sprint 6)
+# 20. DATA CLASSES (Sprint 6)
 # ============================================
--keep class coil.** { *; }
--dontwarn coil.**
+# Keep data classes for domain and data layers
+-keep class com.odin.core.domain.model.** { *; }
+-keep class com.odin.core.data.model.** { *; }
+-keep class com.odin.core.data.repository.** { *; }
 
 # ============================================
-# 21. ACCOMPANIST (Sprint 6)
+# 21. TINK (transitive via security-crypto) — missing optional HTTP downloader classes
 # ============================================
--keep class com.google.accompanist.** { *; }
--dontwarn com.google.accompanist.**
-
-# ============================================
-# 22. LOTTIE ANIMATIONS (Sprint 6)
-# ============================================
--keep class com.airbnb.lottie.** { *; }
--dontwarn com.airbnb.lottie.**
-
-# ============================================
-# 23. SHIMMER (Sprint 6)
-# ============================================
--keep class com.valentinilk.shimmer.** { *; }
--dontwarn com.valentinilk.shimmer.**
-
-# ============================================
-# 24. TABLESAW AND SMILE (Sprint 6)
-# ============================================
-# Keep Tablesaw classes
--keep class tech.tablesaw.** { *; }
--dontwarn tech.tablesaw.**
-
-# Keep Smile classes (used by Tablesaw)
--keep class smile.** { *; }
--dontwarn smile.**
--keep class smile.data.** { *; }
--keep class smile.data.type.** { *; }
-
-# ============================================
-# 25. TENSORFLOW LITE (Sprint 6)
-# ============================================
--keep class org.tensorflow.** { *; }
--dontwarn org.tensorflow.**
--keep class org.tensorflow.lite.** { *; }
-
-# ============================================
-# 26. APACHE COMMONS COMPRESS (Sprint 6)
-# ============================================
--keep class org.apache.commons.compress.** { *; }
--dontwarn org.apache.commons.compress.**
-
-# ============================================
-# 27. XZ COMPRESSION (Sprint 6)
-# ============================================
--keep class org.tukaani.xz.** { *; }
--dontwarn org.tukaani.xz.**
-
-# ============================================
-# 28. APACHE COMMONS (Sprint 6)
-# ============================================
--keep class org.apache.commons.** { *; }
--dontwarn org.apache.commons.**
--keep class org.apache.commons.codec.** { *; }
--keep class org.apache.commons.collections.** { *; }
--keep class org.apache.commons.math3.** { *; }
-
-# ============================================
-# 29. JCTOOLS (Sprint 6)
-# ============================================
--keep class org.jctools.** { *; }
--dontwarn org.jctools.**
-
-# ============================================
-# 30. GOOGLE API CLIENT (Sprint 6)
-# ============================================
--keep class com.google.api.client.** { *; }
--dontwarn com.google.api.client.**
--keep class com.google.api.client.http.** { *; }
--keep class com.google.api.client.http.javanet.** { *; }
-
-# ============================================
-# 31. GOOGLE CRYPTO TINK (Sprint 6)
-# ============================================
--keep class com.google.crypto.tink.** { *; }
--dontwarn com.google.crypto.tink.**
-
-# ============================================
-# 32. JODA TIME (Sprint 6)
-# ============================================
--keep class org.joda.time.** { *; }
--dontwarn org.joda.time.**
-
-# ============================================
-# 33. SLF4J (Sprint 6)
-# ============================================
--keep class org.slf4j.** { *; }
--dontwarn org.slf4j.**
--keep class org.slf4j.impl.** { *; }
-
-# ============================================
-# 34. CLASSGRAPH (Sprint 6)
-# ============================================
--keep class io.github.classgraph.** { *; }
--dontwarn io.github.classgraph.**
-
-# ============================================
-# 35. GOOGLE GUAVA (Sprint 6)
-# ============================================
--keep class com.google.common.** { *; }
--dontwarn com.google.common.**
+-dontwarn com.google.api.client.http.GenericUrl
+-dontwarn com.google.api.client.http.HttpHeaders
+-dontwarn com.google.api.client.http.HttpRequest
+-dontwarn com.google.api.client.http.HttpRequestFactory
+-dontwarn com.google.api.client.http.HttpResponse
+-dontwarn com.google.api.client.http.HttpTransport
+-dontwarn com.google.api.client.http.javanet.NetHttpTransport$Builder
+-dontwarn com.google.api.client.http.javanet.NetHttpTransport
+-dontwarn org.joda.time.Instant
 

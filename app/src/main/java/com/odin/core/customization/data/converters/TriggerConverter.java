@@ -2,11 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.Trigger;
 
 /**
- * REAL TriggerConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * TriggerConverter para Room.
+ * No convierte silenciosamente datos corruptos en objetos vacios validos.
  */
 public class TriggerConverter {
 
@@ -18,9 +19,14 @@ public class TriggerConverter {
             return new Trigger();
         }
         try {
-            return gson.fromJson(value, Trigger.class);
+            Trigger result = gson.fromJson(value, Trigger.class);
+            return result != null ? result : new Trigger();
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de Trigger: JSON invalido", e);
         } catch (Exception e) {
-            return new Trigger();
+            throw new ConverterCorruptionException(
+                    "Error al deserializar Trigger", e);
         }
     }
 

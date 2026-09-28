@@ -2,11 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.FontScheme;
 
 /**
- * REAL FontSchemeConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * FontSchemeConverter para Room.
+ * No convierte silenciosamente datos corruptos en objetos vacios validos.
  */
 public class FontSchemeConverter {
 
@@ -18,9 +19,14 @@ public class FontSchemeConverter {
             return new FontScheme();
         }
         try {
-            return gson.fromJson(value, FontScheme.class);
+            FontScheme result = gson.fromJson(value, FontScheme.class);
+            return result != null ? result : new FontScheme();
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de FontScheme: JSON invalido", e);
         } catch (Exception e) {
-            return new FontScheme();
+            throw new ConverterCorruptionException(
+                    "Error al deserializar FontScheme", e);
         }
     }
 

@@ -17,7 +17,8 @@ public class BackupStatusConverter {
         try {
             return BackupStatus.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return BackupStatus.PENDING;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de BackupStatus: valor invalido '" + value + "'", e);
         }
     }
 

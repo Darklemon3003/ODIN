@@ -109,4 +109,11 @@ sealed class Screen(
         icon = Icons.Default.Block,
         selectedIcon = Icons.Default.Block
     )
+
+    object FileAnalysis : Screen(
+        route = "file_analysis",
+        title = "Analisis de archivos",
+        icon = Icons.Default.Description,
+        selectedIcon = Icons.Default.Description
+    )
 }

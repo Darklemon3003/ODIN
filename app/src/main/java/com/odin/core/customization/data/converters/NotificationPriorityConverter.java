@@ -17,7 +17,8 @@ public class NotificationPriorityConverter {
         try {
             return NotificationPriority.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return NotificationPriority.HIGH;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de NotificationPriority: valor invalido '" + value + "'", e);
         }
     }
 

@@ -15,6 +15,7 @@ import com.odin.core.ui.navigation.BottomNavigationBar
 import com.odin.core.ui.navigation.Screen
 import com.odin.core.ui.screens.about.AboutScreen
 import com.odin.core.ui.screens.dashboard.DashboardScreen
+import com.odin.core.ui.screens.fileanalysis.FileAnalysisScreen
 import com.odin.core.ui.screens.firewall.FirewallScreen
 import com.odin.core.ui.screens.logs.LogsScreen
 import com.odin.core.ui.screens.network.NetworkScreen
@@ -104,6 +105,9 @@ fun OdinApp() {
                     },
                     onOpenFirewall = {
                         navController.navigateSingleTop(Screen.Firewall.route)
+                    },
+                    onOpenFileAnalysis = {
+                        navController.navigateSingleTop(Screen.FileAnalysis.route)
                     }
                 )
             }
@@ -175,6 +179,9 @@ fun OdinApp() {
             }
             composable(Screen.Quarantine.route) {
                 QuarantineScreen()
+            }
+            composable(Screen.FileAnalysis.route) {
+                FileAnalysisScreen()
             }
         }
     }

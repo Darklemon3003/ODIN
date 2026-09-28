@@ -53,7 +53,7 @@ class LogsRepositoryIntegration @Inject constructor(
         return when (format) {
             ExportFormat.JSON -> logExporter.exportEventsToJson(logs)
             ExportFormat.CSV -> logExporter.exportEventsToCsv(logs)
-            ExportFormat.PDF -> logExporter.exportEventsToPdf(logs)
+            ExportFormat.PDF -> throw UnsupportedOperationException("PDF export is not supported")
         }
     }
     

@@ -1,5 +1,6 @@
 # Gradle
 .gradle/
+.gradle-codex/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
@@ -36,6 +37,19 @@ window2.xml
 fase4_settings_wait.xml
 fase7_window_*.xml
 fase9_*.xml
+
+# Local device/runtime evidence
+/*.xml
+/api36_*.xml
+/api36_*.txt
+/a12_*.xml
+/*.xml.tmp
+/*_ui.xml
+/*_logcat.txt
+/*_build_log.txt
+/fase*_*.txt
+/releaseRuntimeClasspath_codex.txt
+/test_benign.txt
 
 # Test backup
 test_backup/

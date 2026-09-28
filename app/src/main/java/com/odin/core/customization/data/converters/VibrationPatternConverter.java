@@ -17,7 +17,8 @@ public class VibrationPatternConverter {
         try {
             return VibrationPattern.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return VibrationPattern.DEFAULT;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de VibrationPattern: valor invalido '" + value + "'", e);
         }
     }
 

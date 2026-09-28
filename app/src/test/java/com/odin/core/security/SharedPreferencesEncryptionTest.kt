@@ -6,18 +6,18 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 
 class SharedPreferencesEncryptionTest {
 
     private lateinit var context: Context
     private lateinit var masterKey: MasterKey
 
-    @BeforeEach
+    @Before
     fun setup() {
         context = mockk(relaxed = true)
     }

@@ -2,11 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.NotificationSettings;
 
 /**
- * REAL NotificationSettingsConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * NotificationSettingsConverter para Room.
+ * No convierte silenciosamente datos corruptos en null valido.
  */
 public class NotificationSettingsConverter {
 
@@ -19,8 +20,12 @@ public class NotificationSettingsConverter {
         }
         try {
             return gson.fromJson(value, NotificationSettings.class);
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de NotificationSettings: JSON invalido", e);
         } catch (Exception e) {
-            return null;
+            throw new ConverterCorruptionException(
+                    "Error al deserializar NotificationSettings", e);
         }
     }
 

@@ -1,11 +1,13 @@
 package com.odin.core.di
 
+import com.odin.core.data.repository.FileAnalysisRepositoryImpl
 import com.odin.core.data.repository.FirewallRepositoryImpl
 import com.odin.core.data.repository.LogsRepositoryIntegration
 import com.odin.core.data.repository.QuarantineRepositoryImpl
 import com.odin.core.data.repository.SecurityRepositoryImpl
 import com.odin.core.data.repository.SettingsRepositoryImpl
 import com.odin.core.data.repository.ThreatsRepositoryIntegration
+import com.odin.core.domain.repository.FileAnalysisRepository
 import com.odin.core.domain.repository.FirewallRepository
 import com.odin.core.domain.repository.LogsRepository
 import com.odin.core.domain.repository.QuarantineRepository
@@ -57,4 +59,10 @@ abstract class AppModule {
     abstract fun bindSettingsRepository(
         impl: SettingsRepositoryImpl
     ): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFileAnalysisRepository(
+        impl: FileAnalysisRepositoryImpl
+    ): FileAnalysisRepository
 }

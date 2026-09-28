@@ -2,11 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.IconScheme;
 
 /**
- * REAL IconSchemeConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * IconSchemeConverter para Room.
+ * No convierte silenciosamente datos corruptos en objetos vacios validos.
  */
 public class IconSchemeConverter {
 
@@ -18,9 +19,14 @@ public class IconSchemeConverter {
             return new IconScheme();
         }
         try {
-            return gson.fromJson(value, IconScheme.class);
+            IconScheme result = gson.fromJson(value, IconScheme.class);
+            return result != null ? result : new IconScheme();
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de IconScheme: JSON invalido", e);
         } catch (Exception e) {
-            return new IconScheme();
+            throw new ConverterCorruptionException(
+                    "Error al deserializar IconScheme", e);
         }
     }
 

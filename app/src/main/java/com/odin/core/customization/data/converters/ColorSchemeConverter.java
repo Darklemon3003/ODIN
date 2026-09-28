@@ -2,12 +2,12 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonSyntaxException;
 import com.odin.core.customization.model.ColorScheme;
 
 /**
- * REAL ColorSchemeConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * ColorSchemeConverter para Room.
+ * No convierte silenciosamente datos corruptos en objetos vacios validos.
  */
 public class ColorSchemeConverter {
 
@@ -19,9 +19,14 @@ public class ColorSchemeConverter {
             return new ColorScheme();
         }
         try {
-            return gson.fromJson(value, ColorScheme.class);
+            ColorScheme result = gson.fromJson(value, ColorScheme.class);
+            return result != null ? result : new ColorScheme();
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de ColorScheme: JSON invalido", e);
         } catch (Exception e) {
-            return new ColorScheme();
+            throw new ConverterCorruptionException(
+                    "Error al deserializar ColorScheme", e);
         }
     }
 

@@ -2,76 +2,140 @@ package com.odin.core.customization.backup;
 
 import android.content.Context;
 import android.util.Base64;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.MessageDigest;
-import java.util.Arrays;
+import androidx.annotation.NonNull;
+import com.odin.core.security.CryptographicManager;
 
 /**
- * REAL BackupEncryptor for ODIN customization system.
- * This is a REAL encryptor with REAL encryption operations - no simulations.
+ * BackupEncryptor para el sistema de personalizacion de ODIN.
+ *
+ * Usa el proveedor criptografico canonico {@link CryptographicManager} con
+ * AES-256-GCM respaldado por AndroidKeyStore. No contiene claves hardcodeadas,
+ * no usa AES/ECB, y nunca retorna plaintext ante fallos.
+ *
+ * Formato de envelope versionado:
+ *   [MAGIC (7 bytes "ODINBAK")][VERSION (1 byte)][PAYLOAD]
+ *
+ * Version 0x02: payload = [IV (12 bytes)][CIPHERTEXT][TAG (16 bytes)]
+ *               generado por CryptographicManager.encryptBytes().
+ *
+ * El formato legacy (AES/ECB con clave hardcodeada) fue eliminado porque:
+ * - No existen backups legacy en el dispositivo ni en el proyecto.
+ * - La app no ha tenido release production.
+ * - Mantener la clave hardcodeada en el binario seria un riesgo critico.
  */
 public class BackupEncryptor {
 
-    private static final String ENCRYPTION_KEY = "ODIN_BACKUP_ENCRYPTION_KEY_2024";
-    private final Context context;
+    /** Magic bytes para identificar el formato de backup de ODIN. */
+    static final byte[] MAGIC = "ODINBAK".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
 
-    public BackupEncryptor(Context context) {
-        this.context = context.getApplicationContext();
+    /** Version del formato de envelope. 0x02 = AES-256-GCM via CryptographicManager. */
+    static final byte FORMAT_VERSION_2 = 0x02;
+
+    /** Version legacy no soportada (AES/ECB con clave hardcodeada). */
+    static final byte FORMAT_VERSION_LEGACY_1 = 0x01;
+
+    private final CryptographicManager cryptographicManager;
+
+    public BackupEncryptor(@NonNull Context context) {
+        this.cryptographicManager = new CryptographicManager(context);
     }
 
-    public byte[] encrypt(byte[] data) {
+    /**
+     * Constructor para pruebas que permite inyectar un CryptographicManager.
+     */
+    BackupEncryptor(@NonNull CryptographicManager cryptographicManager) {
+        this.cryptographicManager = cryptographicManager;
+    }
+
+    /**
+     * Cifra datos usando AES-256-GCM via CryptographicManager.
+     *
+     * @param data Bytes a cifrar. No debe ser null ni vacio.
+     * @return Bytes cifrados con envelope versionado [MAGIC][VERSION][PAYLOAD].
+     * @throws BackupEncryptionException si el cifrado falla. Nunca retorna plaintext.
+     */
+    public byte[] encrypt(@NonNull byte[] data) {
         if (data == null || data.length == 0) {
-            return new byte[0];
+            throw new IllegalArgumentException("Los datos a cifrar no pueden ser null o vacios");
         }
 
-        try {
-            SecretKeySpec secretKey = generateKey();
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            return cipher.doFinal(data);
-        } catch (Exception e) {
-            return data;
-        }
+        byte[] encryptedPayload = cryptographicManager.encryptBytes(data);
+
+        // Construir envelope: MAGIC + VERSION + PAYLOAD
+        java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate(
+                MAGIC.length + 1 + encryptedPayload.length);
+        buffer.put(MAGIC);
+        buffer.put(FORMAT_VERSION_2);
+        buffer.put(encryptedPayload);
+        return buffer.array();
     }
 
-    public byte[] decrypt(byte[] encryptedData) {
+    /**
+     * Descifra datos cifrados con {@link #encrypt(byte[])}.
+     *
+     * @param encryptedData Bytes con envelope versionado.
+     * @return Bytes descifrados.
+     * @throws BackupEncryptionException si el formato es desconocido, legacy no
+     *         soportado, corrupto, o la autenticacion GCM falla. Nunca retorna
+     *         ciphertext como si fuera plaintext valido.
+     */
+    public byte[] decrypt(@NonNull byte[] encryptedData) {
         if (encryptedData == null || encryptedData.length == 0) {
-            return new byte[0];
+            throw new IllegalArgumentException("Los datos cifrados no pueden ser null o vacios");
         }
 
-        try {
-            SecretKeySpec secretKey = generateKey();
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return cipher.doFinal(encryptedData);
-        } catch (Exception e) {
-            return encryptedData;
+        // Validar tamano minimo: MAGIC (7) + VERSION (1) + IV (12) + TAG (16) = 36
+        if (encryptedData.length < MAGIC.length + 1 + 12 + 16) {
+            throw new BackupEncryptionException("Datos de backup corruptos: tamano insuficiente");
         }
+
+        // Verificar magic
+        for (int i = 0; i < MAGIC.length; i++) {
+            if (encryptedData[i] != MAGIC[i]) {
+                throw new BackupEncryptionException(
+                        "Formato de backup desconocido: magic invalido");
+            }
+        }
+
+        // Leer version
+        byte version = encryptedData[MAGIC.length];
+        if (version == FORMAT_VERSION_LEGACY_1) {
+            throw new BackupEncryptionException(
+                    "Formato de backup legacy (AES/ECB) no soportado");
+        }
+        if (version != FORMAT_VERSION_2) {
+            throw new BackupEncryptionException(
+                    "Version de formato de backup no soportada: " + (version & 0xFF));
+        }
+
+        // Extraer payload y descifrar
+        int payloadOffset = MAGIC.length + 1;
+        byte[] payload = new byte[encryptedData.length - payloadOffset];
+        System.arraycopy(encryptedData, payloadOffset, payload, 0, payload.length);
+
+        return cryptographicManager.decryptBytes(payload);
     }
 
-    private SecretKeySpec generateKey() throws Exception {
-        MessageDigest sha = MessageDigest.getInstance("SHA-256");
-        byte[] key = ENCRYPTION_KEY.getBytes("UTF-8");
-        key = sha.digest(key);
-        key = Arrays.copyOf(key, 16);
-        return new SecretKeySpec(key, "AES");
-    }
-
-    public String encryptString(String data) {
+    /**
+     * Cifra una cadena usando AES-256-GCM y retorna Base64.
+     */
+    public String encryptString(@NonNull String data) {
         if (data == null) {
-            return null;
+            throw new IllegalArgumentException("Los datos a cifrar no pueden ser null");
         }
-        byte[] encrypted = encrypt(data.getBytes());
-        return Base64.encodeToString(encrypted, Base64.DEFAULT);
+        byte[] encrypted = encrypt(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return Base64.encodeToString(encrypted, Base64.NO_WRAP);
     }
 
-    public String decryptString(String encryptedData) {
+    /**
+     * Descifra una cadena Base64 cifrada con {@link #encryptString(String)}.
+     */
+    public String decryptString(@NonNull String encryptedData) {
         if (encryptedData == null) {
-            return null;
+            throw new IllegalArgumentException("Los datos cifrados no pueden ser null");
         }
-        byte[] decoded = Base64.decode(encryptedData, Base64.DEFAULT);
+        byte[] decoded = Base64.decode(encryptedData, Base64.NO_WRAP);
         byte[] decrypted = decrypt(decoded);
-        return new String(decrypted);
+        return new String(decrypted, java.nio.charset.StandardCharsets.UTF_8);
     }
 }

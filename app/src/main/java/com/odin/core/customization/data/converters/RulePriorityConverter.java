@@ -17,7 +17,8 @@ public class RulePriorityConverter {
         try {
             return RulePriority.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return RulePriority.MEDIUM;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de RulePriority: valor invalido '" + value + "'", e);
         }
     }
 

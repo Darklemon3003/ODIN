@@ -2,18 +2,17 @@ package com.odin.core.di;
 
 import android.content.Context;
 
-import com.odin.core.data.local.SecureLocalStorage;
 import com.odin.core.data.repository.FirewallRepositoryImpl;
-import com.odin.core.data.repository.LogRepositoryImpl;
-import com.odin.core.data.repository.SystemStatusRepositoryImpl;
 import com.odin.core.domain.repository.FirewallRepository;
-import com.odin.core.domain.repository.LogRepository;
-import com.odin.core.domain.repository.SystemStatusRepository;
 
 /**
  * DependencyProvider ofrece implementaciones desacopladas de los contratos del dominio.
- * Este patrón permite un fácil reemplazo de implementaciones locales por mocks o por repositorios
- * remotos en fases futuras.
+ * Este patron permite un facil reemplazo de implementaciones locales por mocks o por
+ * repositorios remotos en fases futuras.
+ *
+ * Phase 10: Los proveedores legacy de LogRepository y SystemStatusRepository
+ * fueron eliminados. SentryService ahora usa SentryCore directamente para
+ * persistencia cifrada canonica.
  */
 public final class DependencyProvider {
 
@@ -21,18 +20,7 @@ public final class DependencyProvider {
         // Utility class
     }
 
-    public static LogRepository provideLogRepository(Context context) {
-        SecureLocalStorage storage = new SecureLocalStorage(context);
-        return new LogRepositoryImpl(storage);
-    }
-
-    public static SystemStatusRepository provideSystemStatusRepository(Context context) {
-        SecureLocalStorage storage = new SecureLocalStorage(context);
-        return new SystemStatusRepositoryImpl(storage);
-    }
-
     public static FirewallRepository provideFirewallRepository(Context context) {
-        SecureLocalStorage storage = new SecureLocalStorage(context);
-        return new FirewallRepositoryImpl(storage);
+        return new FirewallRepositoryImpl();
     }
 }

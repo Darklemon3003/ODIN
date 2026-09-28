@@ -159,7 +159,11 @@ public final class LogEvent {
             }
             return hexString.toString();
         } catch (Exception e) {
-            return "";
+            // Nunca devolver una cadena vacía: eso haría que verifyIntegrity()
+            // pase trivialmente cuando el hash almacenado también es vacío,
+            // dando una falsa garantía de integridad. Lanzar para que el
+            // llamador gestione el fallo explícitamente.
+            throw new IllegalStateException("Failed to calculate integrity hash", e);
         }
     }
 
@@ -169,6 +173,14 @@ public final class LogEvent {
      * @return true si la integridad es válida
      */
     public boolean verifyIntegrity() {
+        // Un hash vacío/nulo significa que la integridad nunca se calculó
+        // (p. ej. evento deserializado sin hash, o fallo previo). NO debe
+        // considerarse válido: devolver false en lugar de permitir una
+        // comparación trivial que pasaría si calculateIntegrityHash() también
+        // devolviera vacío.
+        if (integrityHash == null || integrityHash.isEmpty()) {
+            return false;
+        }
         return integrityHash.equals(calculateIntegrityHash());
     }
 

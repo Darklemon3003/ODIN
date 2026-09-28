@@ -193,6 +193,79 @@ public final class CryptographicManager {
     }
 
     /**
+     * Cifra un arreglo de bytes usando AES-256-GCM con la misma clave maestra
+     * del AndroidKeyStore. El IV es generado aleatoriamente por el Keystore
+     * y se incluye al inicio del resultado.
+     *
+     * Formato del resultado: [IV (12 bytes)][CIPHERTEXT][TAG (16 bytes)]
+     *
+     * @param plaintext Bytes a cifrar
+     * @return Bytes cifrados con IV prepended
+     * @throws SecurityException si el cifrado falla
+     */
+    public synchronized byte[] encryptBytes(@NonNull byte[] plaintext) {
+        if (plaintext == null || plaintext.length == 0) {
+            throw new IllegalArgumentException("El plaintext no puede ser null o vacio");
+        }
+
+        try {
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE, masterKey);
+            byte[] iv = cipher.getIV();
+            if (iv == null || iv.length != GCM_IV_LENGTH) {
+                throw new SecurityException("IV AES-GCM invalido generado por KeyStore");
+            }
+
+            byte[] ciphertext = cipher.doFinal(plaintext);
+
+            ByteBuffer buffer = ByteBuffer.allocate(GCM_IV_LENGTH + ciphertext.length);
+            buffer.put(iv);
+            buffer.put(ciphertext);
+            return buffer.array();
+
+        } catch (Exception e) {
+            throw new SecurityException("Error durante cifrado AES-256-GCM (bytes)", e);
+        }
+    }
+
+    /**
+     * Descifra un arreglo de bytes cifrado con encryptBytes.
+     * Extrae el IV del inicio de los datos.
+     *
+     * @param ciphertext Bytes con formato: [IV][CIPHERTEXT][TAG]
+     * @return Bytes descifrados
+     * @throws SecurityException si el descifrado falla (datos corruptos o
+     *                           autenticacion falla)
+     */
+    public synchronized byte[] decryptBytes(@NonNull byte[] ciphertext) {
+        if (ciphertext == null || ciphertext.length == 0) {
+            throw new IllegalArgumentException("El ciphertext no puede ser null o vacio");
+        }
+
+        if (ciphertext.length < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
+            throw new SecurityException("Datos cifrados corruptos: tamano insuficiente");
+        }
+
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(ciphertext);
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            buffer.get(iv);
+
+            byte[] encryptedText = new byte[buffer.remaining()];
+            buffer.get(encryptedText);
+
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            cipher.init(Cipher.DECRYPT_MODE, masterKey, spec);
+
+            return cipher.doFinal(encryptedText);
+
+        } catch (Exception e) {
+            throw new SecurityException("Error durante descifrado AES-256-GCM (bytes)", e);
+        }
+    }
+
+    /**
      * Verifica si la clave maestra está disponible y operativa.
      *
      * @return true si la clave está lista para usarse

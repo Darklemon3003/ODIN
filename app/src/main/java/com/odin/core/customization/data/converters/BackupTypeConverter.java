@@ -17,7 +17,8 @@ public class BackupTypeConverter {
         try {
             return BackupType.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return BackupType.FULL;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de BackupType: valor invalido '" + value + "'", e);
         }
     }
 

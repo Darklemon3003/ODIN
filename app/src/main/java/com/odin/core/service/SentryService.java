@@ -9,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,14 +18,12 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
 
 import com.odin.core.R;
-import com.odin.core.di.DependencyProvider;
 import com.odin.core.domain.model.LogEvent;
 import com.odin.core.domain.model.SystemStatus;
-import com.odin.core.domain.repository.LogRepository;
-import com.odin.core.domain.repository.SystemStatusRepository;
 import com.odin.core.exception.OdinException;
 import com.odin.core.exception.PersistenceException;
 import com.odin.core.persistence.LogRotationManager;
@@ -59,8 +58,6 @@ public class SentryService extends Service {
     private static final long HEARTBEAT_INTERVAL_MS = 30_000L;
     public static final String ACTION_STOP_SENTRY = "com.odin.core.action.STOP_SENTRY";
 
-    private LogRepository logRepository;
-    private SystemStatusRepository statusRepository;
     private SentryCore sentryCore;
     private PowerManager.WakeLock wakeLock;
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
@@ -87,8 +84,6 @@ public class SentryService extends Service {
         try {
             SentryRuntimeState.markStarting(this, null);
             createNotificationChannel();
-            logRepository = DependencyProvider.provideLogRepository(this);
-            statusRepository = DependencyProvider.provideSystemStatusRepository(this);
             sentryCore = SentryCore.getInstance(this);
             heartbeatHandler = new Handler(Looper.getMainLooper());
             acquireWakeLock();
@@ -127,7 +122,7 @@ public class SentryService extends Service {
                 stopSelf();
                 return START_NOT_STICKY;
             }
-            startForeground(NOTIFICATION_ID, buildForegroundNotification());
+            startForegroundCompat();
             SentryRuntimeState.markActive(this, sentryCore != null && sentryCore.isHealthy());
             startHeartbeat();
             publishAgentStatus();
@@ -168,9 +163,7 @@ public class SentryService extends Service {
                     new Date().getTime(),
                     "SENTRY_SERVICE",
                     "Servicio de persistencia inicializado exitosamente"));
-            logRepository.appendEvent(createLogEvent("SENTRY_SERVICE",
-                    "Inicializando servicio de alta persistencia."));
-            statusRepository.saveStatus(new SystemStatus(true, System.currentTimeMillis(),
+            sentryCore.saveSystemStatus(new SystemStatus(true, System.currentTimeMillis(),
                     "SERVICIO_INICIADO"));
             Log.i(TAG, "Agente inicializado correctamente");
         } catch (Exception e) {
@@ -187,9 +180,7 @@ public class SentryService extends Service {
                     "Estado publicado. Eventos: " + recentEvents.size() +
                             ", Crashes: " + sentryCore.getCrashCount() +
                             ", Health: " + (sentryCore.isHealthy() ? "OK" : "CRITICAL")));
-            logRepository.appendEvent(createLogEvent("STATUS_PUBLISH",
-                    "Se publicaron " + recentEvents.size() + " eventos recientes."));
-            statusRepository.saveStatus(new SystemStatus(true, System.currentTimeMillis(),
+            sentryCore.saveSystemStatus(new SystemStatus(true, System.currentTimeMillis(),
                     "SERVICIO_FOREGROUND"));
         } catch (Exception e) {
             Log.w(TAG, "Error publicando estado", e);
@@ -202,10 +193,8 @@ public class SentryService extends Service {
                     new Date().getTime(),
                     "SENTRY_SERVICE",
                     "Servicio detenido de forma controlada"));
-            statusRepository.saveStatus(new SystemStatus(false, System.currentTimeMillis(),
+            sentryCore.saveSystemStatus(new SystemStatus(false, System.currentTimeMillis(),
                     "SERVICIO_DETENIDO"));
-            logRepository.appendEvent(createLogEvent("SENTRY_SERVICE",
-                    "Servicio detenido de forma controlada."));
         } catch (Exception e) {
             Log.e(TAG, "Error guardando estado de apagado: " + e.getMessage());
         }
@@ -244,6 +233,17 @@ public class SentryService extends Service {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error registrando error crítico: " + e.getMessage());
+        }
+    }
+
+    private void startForegroundCompat() {
+        Notification notification = buildForegroundNotification();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ServiceCompat.startForeground(
+                    this, NOTIFICATION_ID, notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
         }
     }
 
@@ -295,9 +295,5 @@ public class SentryService extends Service {
                 manager.createNotificationChannel(channel);
             }
         }
-    }
-
-    private LogEvent createLogEvent(String source, String message) {
-        return new LogEvent(new Date().getTime(), source, message);
     }
 }

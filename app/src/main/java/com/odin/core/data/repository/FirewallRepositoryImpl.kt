@@ -1,6 +1,5 @@
 package com.odin.core.data.repository
 
-import com.odin.core.data.local.SecureLocalStorage
 import com.odin.core.domain.model.FirewallRule
 import com.odin.core.domain.model.NetworkPacket
 import com.odin.core.domain.repository.FirewallRepository
@@ -15,8 +14,6 @@ import javax.inject.Singleton
 @Singleton
 class FirewallRepositoryImpl @Inject constructor() : FirewallRepository {
 
-    constructor(storage: SecureLocalStorage) : this()
-    
     private val dynamicRuleEngine = DynamicRuleEngine()
     
     private val _rules = MutableStateFlow<List<FirewallRule>>(emptyList())

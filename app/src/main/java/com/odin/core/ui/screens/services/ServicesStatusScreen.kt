@@ -140,8 +140,8 @@ fun ServicesStatusScreen(
             item {
                 ServiceInfoCard(
                     title = "TorService / VpnAnonymityService",
-                    description = "Servicios legacy de anonimato detectados; no forman parte del flujo principal de Fase 6.",
-                    status = "Legacy parcial",
+                    description = "Servicios legacy de anonimato eliminados en Fase 12. No forman parte de ODIN.",
+                    status = "Eliminado",
                     tone = OdinStatusTone.Planned,
                     icon = Icons.Default.Security
                 )

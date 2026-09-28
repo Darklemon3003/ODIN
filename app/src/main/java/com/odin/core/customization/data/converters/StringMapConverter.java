@@ -2,13 +2,14 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * REAL StringMapConverter for ODIN customization system.
- * This is a REAL converter with REAL Map<String, Object> serialization - no simulations.
+ * StringMapConverter para Room.
+ * No convierte silenciosamente datos corruptos en null valido.
  */
 public class StringMapConverter {
 
@@ -28,6 +29,14 @@ public class StringMapConverter {
             return null;
         }
         Type type = new TypeToken<Map<String, Object>>(){}.getType();
-        return gson.fromJson(mapJson, type);
+        try {
+            return gson.fromJson(mapJson, type);
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de StringMap: JSON invalido", e);
+        } catch (Exception e) {
+            throw new ConverterCorruptionException(
+                    "Error al deserializar StringMap", e);
+        }
     }
 }

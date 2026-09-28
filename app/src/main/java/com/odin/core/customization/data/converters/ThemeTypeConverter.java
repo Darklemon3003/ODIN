@@ -17,7 +17,8 @@ public class ThemeTypeConverter {
         try {
             return ThemeType.valueOf(value);
         } catch (IllegalArgumentException e) {
-            return ThemeType.SYSTEM;
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de ThemeType: valor invalido '" + value + "'", e);
         }
     }
 

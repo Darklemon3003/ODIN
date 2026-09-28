@@ -2,13 +2,14 @@ package com.odin.core.customization.data.converters;
 
 import androidx.room.TypeConverter;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.odin.core.customization.model.Condition;
 import java.lang.reflect.Type;
 
 /**
- * REAL ConditionConverter for Room database.
- * This is a REAL converter using Gson for JSON serialization - no simulations.
+ * ConditionConverter para Room.
+ * No convierte silenciosamente datos corruptos en objetos vacios validos.
  */
 public class ConditionConverter {
 
@@ -21,9 +22,14 @@ public class ConditionConverter {
             return new Condition();
         }
         try {
-            return gson.fromJson(value, conditionType);
+            Condition result = gson.fromJson(value, conditionType);
+            return result != null ? result : new Condition();
+        } catch (JsonSyntaxException e) {
+            throw new ConverterCorruptionException(
+                    "Datos corruptos en columna de Condition: JSON invalido", e);
         } catch (Exception e) {
-            return new Condition();
+            throw new ConverterCorruptionException(
+                    "Error al deserializar Condition", e);
         }
     }
 

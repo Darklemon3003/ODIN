@@ -22,7 +22,7 @@ import com.odin.core.customization.model.*;
         Backup.class
     },
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters({
     ThemeTypeConverter.class,
@@ -65,7 +65,8 @@ public abstract class CustomizationDatabase extends RoomDatabase {
                             CustomizationDatabase.class,
                             DATABASE_NAME
                     )
-                    .fallbackToDestructiveMigration()
+                    // Sin fallbackToDestructiveMigration: una migracion faltante
+                    // debe fallar explicitamente, no destruir datos silenciosamente.
                     .build();
                 }
             }
