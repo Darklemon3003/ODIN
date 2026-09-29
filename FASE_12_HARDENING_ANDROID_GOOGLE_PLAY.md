@@ -2646,3 +2646,277 @@ mismatch is also documented for owner review.
 
 Stop condition honored: Phase 13 and Phase 14 were not started. Owner review is
 required before any later phase.
+
+# Phase 12.3 — NetShield State Consistency and Android 12 Physical Closure
+
+Validation date: 2026-09-28
+
+Branch: `phase12-r8-fix`
+
+Implementation commit: `e174a3f` (`fix: synchronize NetShield runtime state`)
+
+## NetShield heartbeat root cause
+
+`NetShieldVpnService` runs in the dedicated `com.odin.core:netshield` process. The
+old runtime path used `SharedPreferences.apply()` while both the service process and
+the main application process retained their own process-local `SharedPreferences`
+instances. The service process wrote active and heartbeat values, but the main process
+continued reading its stale in-memory preference snapshot. The UI also refreshed only
+when the screen was entered and once shortly after an action. Together, those two
+conditions produced the verified mismatch: a live VPN service, foreground
+notification, and `tun0`, while the runtime card showed `Detenido` and `Sin datos`.
+
+The defect was cross-process cache visibility, not a failed VPN service or timestamp
+format conversion.
+
+## Cross-process architecture
+
+The runtime state now uses one private, file-backed canonical record in
+`noBackupFilesDir/netshield_runtime_state.properties`. Every read opens the file
+again, so the main process cannot reuse a stale preference cache. Writers serialize
+updates with an in-process mutex and an OS file lock, flush with `fd.sync()`, and
+replace the state file atomically where the platform supports it. The fallback still
+uses a replacement move under the same lock.
+
+The file contains only non-sensitive runtime/configuration evidence: canonical state,
+service and tunnel flags, heartbeat and lifecycle timestamps, consent-derived VPN/risk
+flags, aggregate counters, and static error text. It does not store URLs, payloads,
+tokens, raw traffic, or private network details. Read/write failure becomes
+`UNKNOWN_STALE`; it never fabricates `STOPPED`.
+
+The previous preference record is migrated once. A clean installation receives an
+explicit `STOPPED` baseline. Legacy `ACTIVE` maps to `RUNNING`, but without tunnel
+evidence it cannot be displayed as active and naturally resolves to `UNKNOWN_STALE`
+until the service writes current evidence.
+
+## Files modified
+
+- `app/src/main/java/com/odin/core/netshield/NetShieldRuntimeStore.kt`
+- `app/src/main/java/com/odin/core/netshield/NetShieldRuntimeState.kt`
+- `app/src/main/java/com/odin/core/netshield/NetShieldController.kt`
+- `app/src/main/java/com/odin/core/ui/model/NetShieldUiState.kt`
+- `app/src/main/java/com/odin/core/ui/screens/netshield/NetShieldControlScreen.kt`
+- `app/src/test/java/com/odin/core/netshield/NetShieldRuntimeStateTest.kt`
+
+## State and heartbeat semantics
+
+Canonical runtime states are `STOPPED`, `STARTING`, `RUNNING`, `STOPPING`, `ERROR`,
+and `UNKNOWN_STALE` at the UI boundary.
+
+- `RUNNING` requires all of: persisted state `RUNNING`, service-running evidence,
+  tunnel-established evidence, and a heartbeat no older than 90 seconds.
+- Missing, expired, future-dated, contradictory, or unreadable runtime evidence maps
+  to `UNKNOWN_STALE`, not `RUNNING` or `STOPPED`.
+- `STOPPED` requires an explicit persisted stop state and no service-running flag.
+- `STARTING` and `STOPPING` expire to `UNKNOWN_STALE` after 90 seconds.
+- VPN consent or authorization alone never maps to an active runtime state.
+- Start is enabled only from confirmed `STOPPED`. Stop remains available for a stale
+  or unknown state so the user has a recovery action.
+
+The screen now refreshes immediately and every five seconds only while its lifecycle
+is `RESUMED`. The existing action callbacks still refresh after start, stop, consent,
+authorization, and risk acknowledgement. Polling stops with the visible lifecycle.
+
+## Tests added
+
+Ten focused tests cover fresh running state, explicit stopped state, stale heartbeat,
+missing heartbeat, missing tunnel evidence, start persistence, stop persistence,
+process-restart stale-state handling, consent not implying active state, and retained
+active evidence while consent revocation is waiting for service shutdown.
+
+Final unit result: 65 tests, 0 failures, 0 errors, 0 skipped.
+
+## API 36 NetShield before and after
+
+Before this fix, the Phase 12.2 release run simultaneously showed:
+
+```
+OS service: active
+Foreground notification 8902: active
+tun0: UP
+Runtime UI: Detenido / Sin datos
+```
+
+After installing the Phase 12.3 release-test APK in place, the existing consent,
+authorization, and risk settings remained readable. With NetShield running, all layers
+agreed simultaneously:
+
+```
+Process: com.odin.core:netshield
+Service: com.odin.core/.service.NetShieldVpnService
+isForeground: true
+foregroundId: 8902
+foregroundServiceType: 0x40000000 (specialUse)
+Notification channel: odin_netshield_channel
+Notification flags: ONGOING_EVENT | NO_CLEAR | FOREGROUND_SERVICE
+Notification visibility: PRIVATE
+tun0: UP, 10.0.0.1/32
+Persisted state: RUNNING
+service_running: true
+tunnel_established: true
+UI runtime: Activo
+UI message: Servicio foreground con heartbeat vigente.
+Observed UI heartbeat: 02:48:09
+Start control: disabled
+Stop control: enabled
+```
+
+The persisted heartbeat advanced during observation, confirming that the UI was not
+displaying a one-time optimistic transition.
+
+After explicit stop, the service record, notification `8902`, and `tun0` were absent.
+The canonical state was `STOPPED`, both service/tunnel flags were false, and the UI
+showed `Detenido` with `El servicio confirmo su detencion.` Start was enabled again.
+No stale active panel remained.
+
+Evidence was captured locally under ignored build output in
+`app/build/phase12_3_evidence/`; APKs and device evidence are not committed.
+
+## Release/API 36 final regression
+
+The minified release APK was signed only as a disposable local test artifact with the
+standard debug test key. Signature verification passed for v2 and v3. It was installed
+with `adb install -r`; launch completed without an ODIN crash.
+
+- Sentry explicit start showed active UI state, a current heartbeat, service
+  `SentryService`, and foreground notification `8901` on
+  `odin_sentry_channel`. Explicit stop removed the service and notification.
+- NetShield passed the simultaneous service/FGS/tunnel/UI/heartbeat matrix described
+  above, then returned to a fully stopped state.
+- File Analysis selected a 36-byte controlled synthetic text file through SAF. The UI
+  produced SHA-256
+  `9bbc7b05338ba791b06a1e0d85af15c0126ceb8ab6b931cec6ead91a6d287762`, an honest
+  `Sin indicadores conocidos detectados` verdict, detected type `UNKNOWN`, and retained
+  the limitation disclaimer. No broad storage permission was used.
+- Logs refreshed to 41 real and 41 visible events after the Sentry, NetShield, and File
+  Analysis exercises. Search, filter, and export controls remained present. The prior
+  Phase 12.2 real JSON/CSV export validation remains unchanged; PDF remains honestly
+  unavailable.
+- UID-scoped Logcat for ODIN UID `10221` had zero matches for `VerifyError`,
+  `ClassNotFoundException`, `NoSuchMethodError`, `IllegalAccessError`,
+  `SecurityException`, `MissingForegroundServiceTypeException`,
+  `ForegroundServiceTypeNotAllowedException`,
+  `ForegroundServiceStartNotAllowedException`, and `FATAL EXCEPTION`.
+- The same UID-scoped log had zero matches for the controlled filename,
+  `content://`, `/storage/`, `/sdcard/`, and the searched credential patterns.
+
+Android MediaProvider path logging remains classified as platform behavior outside the
+ODIN UID. No unsafe attempt was made to suppress system/provider diagnostics.
+
+## Android 12 physical matrix
+
+The required device was checked again at finalization:
+
+```
+Required serial: 116829e90703
+Required model: Xiaomi 21121119SG
+Required OS: Android 12
+adb devices -l: emulator-5554 only
+adb -s 116829e90703 get-state: device not found
+```
+
+The API 36 emulator was not substituted for the mandatory physical device. Therefore
+every Android 12 gate remains truthfully `NOT TESTED`:
+
+| Android 12 gate | Result | Exact reason |
+|---|---|---|
+| Physical device identity/API confirmation | NOT TESTED | Serial `116829e90703` absent |
+| In-place `adb install -r` update | NOT TESTED | Required device unavailable |
+| Encrypted preferences and consent preservation | NOT TESTED | Required device unavailable |
+| Room/Logs/Sentry-event persistence | NOT TESTED | Required device unavailable |
+| Startup/no automatic actions | NOT TESTED | Required device unavailable |
+| Sentry consent/start/UI/heartbeat/FGS/stop | NOT TESTED | Required device unavailable |
+| NetShield consent/VPN/risk/start/tun/UI heartbeat/stop | NOT TESTED | Required device unavailable |
+| File Analysis SAF/SHA/verdict | NOT TESTED | Required device unavailable |
+| Logs search/filter/detail/sanitization | NOT TESTED | Required device unavailable |
+| Real JSON and CSV exports | NOT TESTED | Required device unavailable |
+| Process restart and crypto/database integrity | NOT TESTED | Required device unavailable |
+| Clean uninstall/install and default state | NOT TESTED | Required device unavailable |
+| Clean-install Sentry/NetShield/File Analysis smoke | NOT TESTED | Required device unavailable |
+| Final services/tun/notification state | NOT TESTED | Required device unavailable |
+
+No Android 12 success is inferred or fabricated.
+
+## Build gates
+
+All commands were rerun from clean after the final source changes:
+
+| Gate | Result |
+|---|---|
+| `gradlew clean` | PASS |
+| `:app:compileDebugKotlin` | PASS |
+| `:app:assembleDebug` | PASS |
+| `:app:testDebugUnitTest` | PASS, 65 tests, 0 failures/errors/skips |
+| `:app:assembleRelease` | PASS with R8 and resource shrinking |
+| `:app:lintDebug` | PASS, 0 errors, 371 existing warnings |
+| `:app:lintRelease` | PASS, 0 errors, 371 existing warnings |
+
+## Final API 36 state
+
+```
+SentryService matches: 0
+NetShieldVpnService matches: 0
+tun0 matches: 0
+ODIN notification 8901 matches: 0
+ODIN notification 8902 matches: 0
+```
+
+## Git finalization
+
+```
+Implementation commit: e174a3f (fix: synchronize NetShield runtime state)
+Report commit: the commit containing this Phase 12.3 section
+Remote target: origin/phase12-r8-fix
+Push: verified after the report commit
+Local/remote HEAD equality: verified after the final push
+Worktree: clean after the final push
+```
+
+Generated APKs, debug keys, local properties, Gradle caches, and device evidence were
+not added to Git.
+
+## Final risk classification
+
+```
+CRITICAL ACTIVE: 0
+HIGH ACTIVE: 1
+MEDIUM ACTIVE: 1
+LOW ACTIVE: 2
+```
+
+High active:
+
+- The owner-mandated Android 12 physical matrix is unexecuted because exact serial
+  `116829e90703` is absent. This is a release-closure validation risk, not a proven
+  Android 12 product defect.
+
+Medium active:
+
+- Android MediaProvider may log the SAF-selected path at system level. ODIN's own UID
+  exposed zero raw file path or URI in the repeated release scan.
+
+Low active:
+
+- Legacy/non-production labels remain in parts of the UI and tests.
+- Generated local validation evidence remains intentionally ignored and uncommitted.
+
+## Phase 12.3 final status
+
+```
+PHASE 12 FINAL STATUS: NOT CLOSED
+GO ABSOLUTE: NO
+SAFE TO START PHASE 13: NO
+```
+
+Exact reason:
+
+The NetShield cross-process state defect is fixed, stale or missing heartbeat evidence
+can no longer falsely display `RUNNING` or `STOPPED`, all clean build/lint/unit gates
+pass, and the complete release/API 36 regression is green with a clean final runtime
+state. Phase 12 nevertheless requires the named Android 12 physical matrix. Serial
+`116829e90703` was not connected, so its in-place update, persistence, clean-install,
+Sentry, NetShield, File Analysis, Logs/export, and final-state gates remain untested.
+That leaves one active high-severity release-closure risk and makes absolute go `NO`.
+
+Stop condition honored: Phase 13 and Phase 14 were not started. Owner review and the
+exact Android 12 device are required to continue closure.
