@@ -6,6 +6,7 @@ data class NetShieldUiState(
     val isNotificationPermissionGranted: Boolean = false,
     val isConnectivityRiskAccepted: Boolean = false,
     val isServiceRunning: Boolean = false,
+    val runtimeStatus: NetShieldRuntimeStatus = NetShieldRuntimeStatus.UNKNOWN_STALE,
     val isSafeValidationMode: Boolean = true,
     val status: NetShieldStatus = NetShieldStatus.REQUIRES_CONSENT,
     val statusMessage: String = "NetShield requiere consentimiento explicito.",
@@ -44,4 +45,13 @@ enum class NetShieldStatus {
     ERROR,
     NOT_VALIDATED,
     UNSAFE_TO_START
+}
+
+enum class NetShieldRuntimeStatus {
+    STOPPED,
+    STARTING,
+    RUNNING,
+    STOPPING,
+    ERROR,
+    UNKNOWN_STALE
 }

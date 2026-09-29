@@ -42,6 +42,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import com.odin.core.ui.model.NetShieldRuntimeStatus
 import com.odin.core.ui.components.OdinCard
 import com.odin.core.ui.components.OdinDangerButton
 import com.odin.core.ui.components.OdinEmptyState
@@ -58,6 +62,8 @@ import com.odin.core.ui.viewmodel.NetShieldViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,8 +82,14 @@ fun NetShieldControlScreen(
         onResult = { granted -> viewModel.onNotificationPermissionResult(granted) }
     )
 
-    LaunchedEffect(Unit) {
-        viewModel.refresh()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) {
+                viewModel.refresh()
+                delay(5_000L)
+            }
+        }
     }
 
     Scaffold(
@@ -319,13 +331,9 @@ private fun RuntimeCard(uiState: NetShieldUiState) {
         StatusRow(
             icon = Icons.Default.VpnKey,
             title = "NetShieldVpnService",
-            message = if (uiState.isServiceRunning) {
-                "Servicio foreground con heartbeat vigente."
-            } else {
-                "Servicio detenido o no validado."
-            },
-            status = if (uiState.isServiceRunning) "Activo" else "Detenido",
-            tone = if (uiState.isServiceRunning) OdinStatusTone.Safe else OdinStatusTone.Neutral
+            message = uiState.runtimeStatus.message(),
+            status = uiState.runtimeStatus.label(),
+            tone = uiState.runtimeStatus.tone()
         )
         StatusRow(
             icon = Icons.Default.Security,
@@ -446,6 +454,33 @@ private fun NetShieldStatus.tone(): OdinStatusTone {
         NetShieldStatus.STARTING,
         NetShieldStatus.STOPPING -> OdinStatusTone.Neutral
     }
+}
+
+private fun NetShieldRuntimeStatus.label(): String = when (this) {
+    NetShieldRuntimeStatus.STOPPED -> "Detenido"
+    NetShieldRuntimeStatus.STARTING -> "Iniciando"
+    NetShieldRuntimeStatus.RUNNING -> "Activo"
+    NetShieldRuntimeStatus.STOPPING -> "Deteniendo"
+    NetShieldRuntimeStatus.ERROR -> "Error"
+    NetShieldRuntimeStatus.UNKNOWN_STALE -> "Desconocido"
+}
+
+private fun NetShieldRuntimeStatus.message(): String = when (this) {
+    NetShieldRuntimeStatus.STOPPED -> "El servicio confirmo su detencion."
+    NetShieldRuntimeStatus.STARTING -> "Android esta iniciando el servicio VPN local."
+    NetShieldRuntimeStatus.RUNNING -> "Servicio foreground con heartbeat vigente."
+    NetShieldRuntimeStatus.STOPPING -> "Android esta deteniendo el servicio VPN local."
+    NetShieldRuntimeStatus.ERROR -> "El servicio reporto un error local."
+    NetShieldRuntimeStatus.UNKNOWN_STALE -> "Sin evidencia runtime vigente; el estado no se puede confirmar."
+}
+
+private fun NetShieldRuntimeStatus.tone(): OdinStatusTone = when (this) {
+    NetShieldRuntimeStatus.RUNNING -> OdinStatusTone.Safe
+    NetShieldRuntimeStatus.ERROR -> OdinStatusTone.Error
+    NetShieldRuntimeStatus.UNKNOWN_STALE -> OdinStatusTone.Warning
+    NetShieldRuntimeStatus.STOPPED,
+    NetShieldRuntimeStatus.STARTING,
+    NetShieldRuntimeStatus.STOPPING -> OdinStatusTone.Neutral
 }
 
 private fun formatTime(timestamp: Long?): String {

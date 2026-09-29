@@ -12,6 +12,7 @@ import com.odin.core.persistence.SentryCore
 import com.odin.core.security.ConsentManager
 import com.odin.core.service.NetShieldVpnService
 import com.odin.core.ui.model.NetShieldMetrics
+import com.odin.core.ui.model.NetShieldRuntimeStatus
 import com.odin.core.ui.model.NetShieldStatus
 import com.odin.core.ui.model.NetShieldUiState
 
@@ -23,24 +24,19 @@ class NetShieldController(context: Context) {
         val snapshot = NetShieldRuntimeState.read(appContext)
         val consentGranted = consentManager.isNetShieldVpnEnabled()
         val notificationGranted = hasNotificationPermission()
-        val freshRunning = snapshot.serviceRunning && snapshot.hasFreshHeartbeat()
+        val runtimeStatus = snapshot.runtimeStatus()
+        val freshRunning = runtimeStatus == NetShieldRuntimeStatus.RUNNING
         val requiresConsent = !consentGranted
         val requiresVpnAuthorization = consentGranted && !snapshot.vpnAuthorized
         val requiresNotification = consentGranted && !notificationGranted
 
-        val status = when {
-            requiresConsent -> NetShieldStatus.REQUIRES_CONSENT
-            requiresNotification -> NetShieldStatus.REQUIRES_NOTIFICATION_PERMISSION
-            requiresVpnAuthorization -> NetShieldStatus.REQUIRES_VPN_AUTHORIZATION
-            snapshot.state == NetShieldRuntimeState.STATE_ERROR -> NetShieldStatus.ERROR
-            snapshot.state == NetShieldRuntimeState.STATE_STARTING -> NetShieldStatus.STARTING
-            snapshot.state == NetShieldRuntimeState.STATE_STOPPING -> NetShieldStatus.STOPPING
-            freshRunning -> NetShieldStatus.ACTIVE
-            snapshot.serviceRunning && !snapshot.hasFreshHeartbeat() -> NetShieldStatus.NOT_VALIDATED
-            consentGranted && snapshot.vpnAuthorized && !snapshot.connectivityRiskAccepted -> NetShieldStatus.UNSAFE_TO_START
-            consentGranted && snapshot.vpnAuthorized -> NetShieldStatus.READY_TO_START
-            else -> NetShieldStatus.INACTIVE
-        }
+        val status = NetShieldStatusResolver.resolve(
+            runtimeStatus = runtimeStatus,
+            consentGranted = consentGranted,
+            notificationGranted = notificationGranted,
+            vpnAuthorized = snapshot.vpnAuthorized,
+            connectivityRiskAccepted = snapshot.connectivityRiskAccepted
+        )
 
         return NetShieldUiState(
             isConsentGranted = consentGranted,
@@ -48,6 +44,7 @@ class NetShieldController(context: Context) {
             isNotificationPermissionGranted = notificationGranted,
             isConnectivityRiskAccepted = snapshot.connectivityRiskAccepted,
             isServiceRunning = freshRunning,
+            runtimeStatus = runtimeStatus,
             isSafeValidationMode = true,
             status = status,
             statusMessage = statusMessage(status),
@@ -62,9 +59,8 @@ class NetShieldController(context: Context) {
                 snapshot.vpnAuthorized &&
                 notificationGranted &&
                 snapshot.connectivityRiskAccepted &&
-                !freshRunning &&
-                status != NetShieldStatus.STARTING,
-            canStop = freshRunning || status == NetShieldStatus.STARTING,
+                runtimeStatus == NetShieldRuntimeStatus.STOPPED,
+            canStop = runtimeStatus != NetShieldRuntimeStatus.STOPPED,
             requiresConsent = requiresConsent,
             requiresVpnAuthorization = requiresVpnAuthorization,
             requiresNotificationPermission = requiresNotification,
@@ -82,7 +78,6 @@ class NetShieldController(context: Context) {
         consentManager.setNetShieldVpnEnabled(false)
         NetShieldRuntimeState.markVpnAuthorized(appContext, false)
         NetShieldRuntimeState.markConnectivityRiskAccepted(appContext, false)
-        NetShieldRuntimeState.markStopped(appContext, "Consentimiento NetShield revocado.")
         logEvent("NETSHIELD_CONSENT", "Consentimiento NetShield revocado por el usuario.")
     }
 
@@ -147,7 +142,9 @@ class NetShieldController(context: Context) {
         }
 
         return try {
-            NetShieldRuntimeState.markStarting(appContext, null)
+            if (!NetShieldRuntimeState.markStarting(appContext, null)) {
+                return Result.failure(IllegalStateException("No se pudo persistir el estado de inicio de NetShield."))
+            }
             val intent = Intent(appContext, NetShieldVpnService::class.java)
                 .setAction(NetShieldVpnService.ACTION_START_VPN)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -229,6 +226,29 @@ class NetShieldController(context: Context) {
             )
         } catch (_: Exception) {
             // Logging must never block NetShield controls.
+        }
+    }
+}
+
+internal object NetShieldStatusResolver {
+    fun resolve(
+        runtimeStatus: NetShieldRuntimeStatus,
+        consentGranted: Boolean,
+        notificationGranted: Boolean,
+        vpnAuthorized: Boolean,
+        connectivityRiskAccepted: Boolean
+    ): NetShieldStatus = when (runtimeStatus) {
+        NetShieldRuntimeStatus.RUNNING -> NetShieldStatus.ACTIVE
+        NetShieldRuntimeStatus.STARTING -> NetShieldStatus.STARTING
+        NetShieldRuntimeStatus.STOPPING -> NetShieldStatus.STOPPING
+        NetShieldRuntimeStatus.ERROR -> NetShieldStatus.ERROR
+        NetShieldRuntimeStatus.UNKNOWN_STALE -> NetShieldStatus.NOT_VALIDATED
+        NetShieldRuntimeStatus.STOPPED -> when {
+            !consentGranted -> NetShieldStatus.REQUIRES_CONSENT
+            !notificationGranted -> NetShieldStatus.REQUIRES_NOTIFICATION_PERMISSION
+            !vpnAuthorized -> NetShieldStatus.REQUIRES_VPN_AUTHORIZATION
+            !connectivityRiskAccepted -> NetShieldStatus.UNSAFE_TO_START
+            else -> NetShieldStatus.READY_TO_START
         }
     }
 }
